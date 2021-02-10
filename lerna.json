@@ -1,0 +1,22 @@
+{
+  "packages": [
+    "packages/*"
+  ],
+  "version": "0.0.0",
+  "command": {
+        "publish": {
+            "allowBranch": [
+                "master",
+                "develop"
+            ]
+        },
+        "bootstrap": {
+            "hoist": true
+        }
+    },
+    "bootstrap": {
+        "npmClientArgs": [
+            "--no-package-lock"
+        ]
+    }
+}
