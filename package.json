@@ -1,0 +1,19 @@
+{
+  "name": "cuecue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/folkloreinc/cuecue.git"
+  },
+  "author": "Folklore <dev@folklore.email>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/folkloreinc/cuecue/issues"
+  },
+  "homepage": "https://github.com/folkloreinc/cuecue#readme"
+}
