@@ -41,7 +41,7 @@
         },
         {
             "files": [
-                "packages/cli/src/**/*.js"
+                "packages/core/src/**/*.js"
             ],
             "rules": {
                 "global-require": 0,

@@ -1,5 +1,5 @@
 {
-    "name": "@cuecue/core",
+    "name": "@cuecue/cli",
     "version": "0.0.1",
     "description": "",
     "keywords": [
@@ -31,8 +31,12 @@
     "license": "ISC",
     "main": "lib/index.js",
     "files": [
-        "lib"
+        "lib",
+        "bin"
     ],
+    "bin": {
+        "cuecue": "./bin/cuecue.js"
+    },
     "scripts": {
         "prepare": "../../scripts/prepare-package.sh"
     },
