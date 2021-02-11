@@ -23,7 +23,7 @@ class MemoryStore extends EventEmitter {
                           id,
                       },
             ),
-        );
+        ) || null;
     }
 
     addItem(type, data) {

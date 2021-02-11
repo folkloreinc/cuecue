@@ -1,5 +1,6 @@
 const path = require('path');
 const getPackagesAliases = require('./scripts/lib/getPackagesAliases');
+const getVendorAliases = require('./scripts/lib/getVendorAliases');
 
 module.exports = (api) => {
     if (api.env('node')) {
@@ -26,13 +27,7 @@ module.exports = (api) => {
                     require.resolve('babel-plugin-module-resolver'),
                     {
                         alias: {
-                            react: require.resolve('react'),
-                            'react-dom/server': require.resolve('react-dom/server'),
-                            'react-dom': require.resolve('react-dom'),
-                            'react-intl': require.resolve('react-intl'),
-                            'react-router': require.resolve('react-router'),
-                            'react-spring': require.resolve('react-spring'),
-                            'react-use-gesture': require.resolve('react-use-gesture'),
+                            ...getVendorAliases(),
                             ...getPackagesAliases({ withoutEndSign: true }),
                         },
                     },

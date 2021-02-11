@@ -1,5 +1,5 @@
 {
-    "name": "@cuecue/input-osc",
+    "name": "@cuecue/http",
     "version": "0.0.1",
     "description": "",
     "keywords": [
@@ -38,11 +38,15 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
+        "@cuecue/core": "^0.0.1",
+        "body-parser": "^1.19.0",
+        "commander": "^7.0.0",
+        "cors": "^2.8.5",
         "debug": "^4.3.1",
+        "express": "^4.17.1",
+        "express-session": "^1.17.1",
         "javascript-state-machine": "^3.1.0",
         "lodash": "^4.17.20",
-        "mysql": "^2.18.1",
-        "node-osc": "^5.2.2",
         "wolfy87-eventemitter": "^5.2.9"
     },
     "publishConfig": {

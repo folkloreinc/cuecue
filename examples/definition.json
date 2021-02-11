@@ -1,0 +1,18 @@
+{
+    "id": "example",
+    "cues": [
+        {
+            "id": "cue1",
+            "type": "question",
+            "question": "question1"
+        },
+        {
+            "id": "cue2",
+            "type": "layout",
+            "layout": "full"
+        },
+        {
+            "id": "cue3"
+        }
+    ]
+}

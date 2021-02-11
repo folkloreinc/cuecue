@@ -1,5 +1,5 @@
 {
-    "name": "@cuecue/core",
+    "name": "@cuecue/pubnub",
     "version": "0.0.1",
     "description": "",
     "keywords": [
@@ -38,10 +38,11 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
-        "commander": "^7.0.0",
+        "@cuecue/core": "^0.0.1",
         "debug": "^4.3.1",
-        "javascript-state-machine": "^3.1.0",
-        "wolfy87-eventemitter": "^5.2.9"
+        "lodash": "^4.17.20",
+        "pubnub": "^4.29.11",
+        "uuid": "^8.3.2"
     },
     "publishConfig": {
         "access": "public"

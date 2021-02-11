@@ -1,16 +1,11 @@
-import { Server } from 'node-osc';
 import StateMachine from 'javascript-state-machine';
 import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
 
-const debug = createDebug('server:osc_remote');
-
-class InputOSC extends EventEmitter {
-    constructor({ commands = null, ...opts } = {}) {
+class BasePlugin extends EventEmitter {
+    constructor(opts = {}) {
         super();
         this.options = {
-            port: process.env.OSC_PORT || 8081,
-            host: process.env.OSC_HOST || '0.0.0.0',
             ...opts,
         };
 
@@ -22,10 +17,9 @@ class InputOSC extends EventEmitter {
         this.onStarted = this.onStarted.bind(this);
         this.onStop = this.onStop.bind(this);
         this.onStopped = this.onStopped.bind(this);
-        this.onMessage = this.onMessage.bind(this);
+        this.onPendingTransition = this.onPendingTransition.bind(this);
 
-        this.server = null;
-        this.commands = commands;
+        this.debug = createDebug('cuecue:input');
 
         this.state = new StateMachine({
             transitions: [
@@ -43,10 +37,9 @@ class InputOSC extends EventEmitter {
                 onAfterStart: this.onStarted,
                 onBeforeStop: this.onStop,
                 onAfterStop: this.onStopped,
+                onPendingTransition: this.onPendingTransition,
             },
         });
-
-        this.init();
     }
 
     init() {
@@ -57,7 +50,10 @@ class InputOSC extends EventEmitter {
         return this.state.destroy();
     }
 
-    start() {
+    async start() {
+        if (!this.initialized()) {
+            await this.init();
+        }
         return this.state.start();
     }
 
@@ -65,13 +61,12 @@ class InputOSC extends EventEmitter {
         return this.state.stop();
     }
 
-    initialized() {
-        return this.state.is('initialized');
+    started() {
+        return this.state.is('started');
     }
 
-    setCommands(commands) {
-        this.commands = commands;
-        return this;
+    initialized() {
+        return this.state.is('initialized');
     }
 
     onInit() {
@@ -79,64 +74,46 @@ class InputOSC extends EventEmitter {
     }
 
     onInitialized() {
-        debug('initialized');
+        this.debug('initialized');
         return process.nextTick(() => this.emit('initialized'));
     }
 
     onDestroy() {
-        debug('destroying...');
+        this.debug('destroying...');
         this.emit('destroy');
-        return new Promise((resolve) => {
-            this.server.off('message', this.onMessage);
-            this.server.close(() => {
-                resolve();
-            });
-        });
     }
 
     onDestroyed() {
-        debug('destroyed');
+        this.debug('destroyed');
         return process.nextTick(() => this.emit('destroyed'));
     }
 
     onStart() {
-        const { port, host } = this.options;
         this.emit('start');
-
-        this.server = new Server(port, host);
-        this.server.on('message', this.onMessage);
     }
 
     onStarted() {
-        const { port, host } = this.options;
-        debug(`started on ${host}:${port}`);
-
+        this.debug('started');
         return process.nextTick(() => this.emit('started'));
     }
 
     onStop() {
-        this.emit('close');
-
-        return new Promise((resolve) => {
-            this.server.off('message', this.onMessage);
-            this.server.close(() => {
-                resolve();
-            });
-        });
+        this.emit('stop');
     }
 
     onStopped() {
-        debug('closed');
-        return process.nextTick(() => this.emit('closed'));
+        this.debug('stopped');
+        return process.nextTick(() => this.emit('stopped'));
     }
 
-    onMessage(message) {
-        const [command = null, ...args] = message;
-        if (command !== null && (this.commands === null || this.commands.indexOf(command) !== -1)) {
-            debug(`command: ${command}`);
-            this.emit('command', command, ...args);
-        }
+    onPendingTransition(transition, from, to) {
+        this.debug('Pending transition: %s from: %s to: %s', transition, from, to);
+        return new Promise((resolve) => {
+            if (transition === 'init') {
+                this.once('initialized', resolve);
+            }
+        });
     }
 }
 
-export default InputOSC;
+export default BasePlugin;
