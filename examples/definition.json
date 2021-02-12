@@ -58,6 +58,16 @@
             "id": "mute_2",
             "type": "mute",
             "participant": "classe-2"
+        },
+        {
+            "id": "unmute_1",
+            "type": "unmute",
+            "participant": "classe-1"
+        },
+        {
+            "id": "unmute_2",
+            "type": "unmute",
+            "participant": "classe-2"
         }
     ]
 }
