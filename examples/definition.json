@@ -2,9 +2,30 @@
     "id": "example",
     "cues": [
         {
-            "id": "pow_wow",
+            "id": "powwow",
             "type": "question",
-            "question": "pow-wow",
+            "question": "powwow",
+            "interaction": true,
+            "stateful": true
+        },
+        {
+            "id": "autochtones",
+            "type": "question",
+            "question": "autochtones",
+            "interaction": true,
+            "stateful": true
+        },
+        {
+            "id": "animaux",
+            "type": "question",
+            "question": "animaux",
+            "interaction": true,
+            "stateful": true
+        },
+        {
+            "id": "discrimination",
+            "type": "question",
+            "question": "discrimination",
             "interaction": true,
             "stateful": true
         },
@@ -24,6 +45,11 @@
             "participant": "all"
         },
         {
+            "id": "unmute_all",
+            "type": "unmute",
+            "participant": "all"
+        },
+        {
             "id": "mute_1",
             "type": "mute",
             "participant": "classe-1"
@@ -32,11 +58,6 @@
             "id": "mute_2",
             "type": "mute",
             "participant": "classe-2"
-        },
-        {
-            "id": "unmute_all",
-            "type": "unmute",
-            "participant": "all"
         }
     ]
 }
