@@ -3,7 +3,11 @@ import Base from './Base';
 
 class PubNubOutput extends Base {
     constructor(opts = {}) {
-        super(opts);
+        super({
+            channel: process.env.PUBNUB_CHANNEL || 'cuecue:output',
+            ...opts,
+        });
+        
         this.debug = createDebug('cuecue:output:pubnub');
     }
     

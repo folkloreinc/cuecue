@@ -25,7 +25,7 @@ class Application extends EventEmitter {
         this.debug = createDebug('cuecue:app');
         this.store = store;
         this.session = null;
-        this.currentCue = null;
+        this.statefulCue = null;
         this.interactions = [];
         this.inputs = [];
         this.outputs = [];
@@ -185,27 +185,27 @@ class Application extends EventEmitter {
 
     async resetInteractions() {
         await this.store.deleteItems('interactions', {
-            session_id: this.session.id,
+            sessionId: this.session.id,
         });
     }
 
     getInteractions() {
         return this.store.getItems('interactions', {
-            session_id: this.session.id,
+            sessionId: this.session.id,
         });
     }
 
     getInteractionsByCue(cueId) {
         return this.store.getItems('interactions  ', {
-            session_id: this.session.id,
-            cue: cueId,
+            sessionId: this.session.id,
+            cueId,
         });
     }
 
     getInteractionsByUser(userId) {
         return this.store.getItems('interactions  ', {
-            session_id: this.session.id,
-            user_id: userId,
+            sessionId: this.session.id,
+            userId,
         });
     }
 
@@ -297,7 +297,7 @@ class Application extends EventEmitter {
     }
 
     async onUncue() {
-        this.currentCue = null;
+        this.statefulCue = null;
 
         await this.setSessionCue(null);
 
@@ -315,9 +315,12 @@ class Application extends EventEmitter {
 
         this.debug('Cue %s', cueId);
 
-        this.currentCue = cue;
-
-        await this.setSessionCue(cue);
+        const { stateful = false } = cue;
+        if (stateful) {
+            this.debug('Stateful cue: %s', cue.id);
+            this.statefulCue = cue;
+            await this.setSessionCue(cue);
+        }
 
         await this.sendCueToOutputs(cue);
 
@@ -329,7 +332,7 @@ class Application extends EventEmitter {
     async onStop() {
         this.emit('stop');
 
-        this.currentCue = null;
+        this.statefulCue = null;
 
         await this.stopInputs();
 
@@ -346,7 +349,7 @@ class Application extends EventEmitter {
         await this.endSession();
 
         this.session = null;
-        this.currentCue = null;
+        this.statefulCue = null;
 
         this.emit('end');
     }
@@ -359,7 +362,10 @@ class Application extends EventEmitter {
                     break;
                 case 'interact': {
                     const [data, metadata = null] = args;
-                    const { cueId = null, userId } = metadata || {};
+                    const {
+                        cueId = this.statefulCue !== null ? this.statefulCue.id : null,
+                        userId,
+                    } = metadata || {};
                     if (cueId !== null) {
                         await this.interactOnCue(cueId, data, userId);
                     } else {
@@ -372,8 +378,8 @@ class Application extends EventEmitter {
                     await this.cue(cueId);
                     break;
                 }
-                case 'wait':
-                    await this.wait();
+                case 'uncue':
+                    await this.uncue();
                     break;
                 case 'end':
                     await this.end();
@@ -394,15 +400,15 @@ class Application extends EventEmitter {
         this.debug('Ensuring interaction... %O', data);
 
         const interactionIdentifier = {
-            session_id: this.session.id,
+            sessionId: this.session.id,
         };
 
         if (cueId !== null) {
-            interactionIdentifier.cue_id = cueId;
+            interactionIdentifier.cueId = cueId;
         }
 
         if (userId !== null) {
-            interactionIdentifier.user_id = userId;
+            interactionIdentifier.userId = userId;
         }
 
         let interaction = await this.store.findItem('interactions', interactionIdentifier);

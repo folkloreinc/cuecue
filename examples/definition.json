@@ -2,17 +2,41 @@
     "id": "example",
     "cues": [
         {
-            "id": "cue1",
+            "id": "pow_wow",
             "type": "question",
-            "question": "question1"
+            "question": "pow-wow",
+            "interaction": true,
+            "stateful": true
         },
         {
-            "id": "cue2",
+            "id": "layout_tile",
+            "type": "layout",
+            "layout": "tile_other"
+        },
+        {
+            "id": "layout_full",
             "type": "layout",
             "layout": "full"
         },
         {
-            "id": "cue3"
+            "id": "mute_all",
+            "type": "mute",
+            "participant": "all"
+        },
+        {
+            "id": "mute_1",
+            "type": "mute",
+            "participant": "classe-1"
+        },
+        {
+            "id": "mute_2",
+            "type": "mute",
+            "participant": "classe-2"
+        },
+        {
+            "id": "unmute_all",
+            "type": "unmute",
+            "participant": "all"
         }
     ]
 }
