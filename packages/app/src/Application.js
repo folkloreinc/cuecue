@@ -3,6 +3,7 @@ import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
 import dayjs from 'dayjs';
 import isObject from 'lodash/isObject';
+import isArray from 'lodash/isArray';
 
 import MemoryStore from './MemoryStore';
 
@@ -96,8 +97,8 @@ class Application extends EventEmitter {
         return this.state.end();
     }
 
-    cue(id) {
-        return this.state.cue(id);
+    cue(id, args) {
+        return this.state.cue(id, args);
     }
 
     cues() {
@@ -306,9 +307,24 @@ class Application extends EventEmitter {
         this.emit('uncue');
     }
 
-    async onCue(state, cueId) {
-        const { cues } = this.definition;
-        const cue = cues.find(({ id }) => id === cueId) || null;
+    async onCue(state, cueId, args) {
+        this.debug('onCue Args %O', args);
+
+        let cue = null;
+
+        // Args is a cue in itself
+        if (isArray(args) && args.length > 0) {
+            [cue] = args;
+        }
+
+        // Predefined cues, could even merge data
+        if (cue === null) {
+            const { cues = [] } = this.definition || {};
+            cue = cues.find(({ id }) => id === cueId) || null;
+        }
+
+        this.debug('Cuuu %O', cue);
+
         if (cue === null) {
             return false;
         }
@@ -325,6 +341,8 @@ class Application extends EventEmitter {
         await this.sendCueToOutputs(cue);
 
         this.emit('cue', cue);
+
+        this.debug('Ok %s', cueId);
 
         return true;
     }
@@ -351,10 +369,11 @@ class Application extends EventEmitter {
         this.session = null;
         this.statefulCue = null;
 
-        this.emit('end');
+        this.emit('ended');
     }
 
     async onInputCommand(command, ...args) {
+        this.debug('onInputCommand %s', command, args);
         try {
             switch (command) {
                 case 'start':
@@ -374,17 +393,23 @@ class Application extends EventEmitter {
                     break;
                 }
                 case 'cue': {
-                    const [cueId] = args;
-                    await this.cue(cueId);
+                    const [cueId, ...otherArgs] = args;
+                    await this.cue(cueId, otherArgs);
                     break;
                 }
                 case 'uncue':
                     await this.uncue();
                     break;
+                case 'stop':
+                    // Maybe kill the server on this one
+                    // await this.stop();
+                    break;
                 case 'end':
+                    // End of the show
                     await this.end();
                     break;
                 case 'reset':
+                    // Reset the current session
                     await this.reset();
                     break;
                 default:

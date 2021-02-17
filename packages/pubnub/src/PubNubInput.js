@@ -8,9 +8,9 @@ class PubNubInput extends Base {
             channel: process.env.PUBNUB_CHANNEL || 'cuecue:input',
             ...opts,
         });
-        
+
         this.onMessage = this.onMessage.bind(this);
-        
+
         this.commands = commands;
         this.debug = createDebug('cuecue:input:pubnub');
     }
@@ -32,13 +32,13 @@ class PubNubInput extends Base {
         this.client.removeListener({
             message: this.onMessage,
         });
-        
+
         await super.onDestroy();
     }
 
     async onStart() {
         await super.onStart();
-        
+
         const { channel } = this.options;
         this.client.subscribe({
             channels: isArray(channel) ? channel : [channel],
@@ -47,7 +47,7 @@ class PubNubInput extends Base {
 
     async onStop() {
         await super.onStop();
-        
+
         const { channel } = this.options;
         this.client.unsubscribe({
             channels: isArray(channel) ? channel : [channel],
@@ -58,7 +58,7 @@ class PubNubInput extends Base {
         const { command = null, args = [] } = message || {};
         if (command !== null && (this.commands === null || this.commands.indexOf(command) !== -1)) {
             this.debug('command: %s args: %o', command, args);
-            this.emit('command', command, ...args);
+            this.emit('command', command, ...(isArray(args) ? args : [args]));
         } else {
             this.debug('message: %o', message);
         }

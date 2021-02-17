@@ -7,10 +7,10 @@ class PubNubOutput extends Base {
             channel: process.env.PUBNUB_CHANNEL || 'cuecue:output',
             ...opts,
         });
-        
+
         this.debug = createDebug('cuecue:output:pubnub');
     }
-    
+
     cue(cue) {
         this.command('cue', cue);
     }

@@ -15,15 +15,17 @@ class MemoryStore extends EventEmitter {
 
     findItem(type, id) {
         const items = this.data[type] || [];
-        return items.find(
-            matches(
-                isObject(id)
-                    ? id
-                    : {
-                          id,
-                      },
-            ),
-        ) || null;
+        return (
+            items.find(
+                matches(
+                    isObject(id)
+                        ? id
+                        : {
+                              id,
+                          },
+                ),
+            ) || null
+        );
     }
 
     addItem(type, data) {
