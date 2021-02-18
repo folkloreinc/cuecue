@@ -1,3 +1,5 @@
-const test = () => console.log('test');
+import Application from './Application';
 
-export default test;
+export { default as MemoryStore } from './MemoryStore';
+
+export default Application;
