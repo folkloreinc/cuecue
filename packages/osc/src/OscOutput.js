@@ -1,5 +1,7 @@
 import { Client } from 'node-osc';
 import createDebug from 'debug';
+import isObject from 'lodash/isObject';
+import isArray from 'lodash/isArray';
 import Base from './Base';
 
 class OscOutput extends Base {
@@ -9,24 +11,35 @@ class OscOutput extends Base {
         this.debug = createDebug('cuecue:output:osc');
     }
 
-    cue(cue) {
-        this.command('cue', cue);
+    cue(cue, extraData = null) {
+        this.command('cue', cue, extraData);
     }
 
-    interact(interaction) {
+    interaction(interaction) {
         this.command('interaction', interaction);
     }
 
+    interact(data, interactionId = null) {
+        this.command('interact', data, interactionId);
+    }
+
     command(command, ...args) {
-        this.debug(`command: ${command} message: ${args}`);
+        const { transformCommand = null } = this.options;
+        const { command: finalCommand = command, args: finalArgs = args } =
+            (transformCommand !== null ? transformCommand(command, args) : null) || {};
+
+        this.debug('command: %s %o', finalCommand, finalArgs);
+
         return new Promise((resolve, reject) => {
-            this.osc.send(command, ...args, (err) => {
+            const path = finalCommand.replace(/^\/?/, '/');
+            const sendArgs = finalArgs.filter((it) => it !== null && !isObject(it) && !isArray(it));
+            this.osc.send(path, ...sendArgs, (err) => {
                 if (err) {
-                    this.debug(`command error: ${command}`);
+                    this.debug('send error: %s %o', path, sendArgs);
                     reject(err);
                     return;
                 }
-                this.debug(`command success: ${command}`);
+                this.debug('send success: %s %o', path, sendArgs);
                 resolve();
             });
         });
@@ -35,7 +48,7 @@ class OscOutput extends Base {
     async onStart() {
         await super.onStart();
         const { port, host } = this.options;
-        this.osc = new Client(port, host);
+        this.osc = new Client(host, port);
     }
 }
 

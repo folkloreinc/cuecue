@@ -2,8 +2,7 @@ import StateMachine from 'javascript-state-machine';
 import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
 import dayjs from 'dayjs';
-import isObject from 'lodash/isObject';
-import isArray from 'lodash/isArray';
+import { v4 as uuidv4 } from 'uuid';
 
 import MemoryStore from './MemoryStore';
 
@@ -97,8 +96,8 @@ class Application extends EventEmitter {
         return this.state.end();
     }
 
-    cue(id, args) {
-        return this.state.cue(id, args);
+    cue(id, extraData = null) {
+        return this.state.cue(id, extraData);
     }
 
     cues() {
@@ -106,32 +105,10 @@ class Application extends EventEmitter {
         return cues;
     }
 
-    async interactOnCue(cueArg, data, userId = null) {
-        if (!this.state.is('cued')) {
-            return null;
-        }
+    async interact(data, interactionId = null) {
+        this.sendInteractToOutputs(data, interactionId);
 
-        const cueId = isObject(cueArg) ? cueArg.id : cueArg;
-
-        const cue = this.cues().find((it) => it.id === cueId) || null;
-        if (cue === null) {
-            return null;
-        }
-
-        const { interaction: hasInteraction = false } = cue;
-        if (!hasInteraction) {
-            return null;
-        }
-
-        const interaction = await this.ensureInteraction(data, cueId, userId);
-
-        this.sendInteractionToOutputs(interaction);
-
-        return interaction;
-    }
-
-    async interact(data, userId = null) {
-        const interaction = await this.ensureInteraction(data, null, userId);
+        const interaction = await this.ensureInteraction(data, interactionId || uuidv4());
 
         this.sendInteractionToOutputs(interaction);
 
@@ -307,21 +284,9 @@ class Application extends EventEmitter {
         this.emit('uncue');
     }
 
-    async onCue(state, cueId, args) {
-        this.debug('onCue Args %O', args);
-
-        let cue = null;
-
-        // Args is a cue in itself
-        if (isArray(args) && args.length > 0) {
-            [cue] = args;
-        }
-
-        // Predefined cues, could even merge data
-        if (cue === null) {
-            const { cues = [] } = this.definition || {};
-            cue = cues.find(({ id }) => id === cueId) || null;
-        }
+    async onCue(state, cueId, extraData = null) {
+        const { cues = [] } = this.definition || {};
+        const cue = cues.find(({ id }) => id === cueId) || null;
 
         this.debug('Cuuu %O', cue);
 
@@ -335,14 +300,14 @@ class Application extends EventEmitter {
         if (stateful) {
             this.debug('Stateful cue: %s', cue.id);
             this.statefulCue = cue;
-            await this.setSessionCue(cue);
+            await this.setSessionCue(cue, extraData);
         }
 
-        await this.sendCueToOutputs(cue);
+        await this.sendCueToOutputs(cue, extraData);
 
-        this.emit('cue', cue);
+        this.emit('cue', cue, extraData);
 
-        this.debug('Ok %s', cueId);
+        this.debug('onCue %s %O', cueId, extraData);
 
         return true;
     }
@@ -374,67 +339,42 @@ class Application extends EventEmitter {
 
     async onInputCommand(command, ...args) {
         this.debug('onInputCommand %s', command, args);
+
+        const {
+            inputCommands = null,
+            validateCommand = null,
+            transformCommand = null,
+        } = this.options;
+
         try {
-            switch (command) {
-                case 'start':
-                    await this.start();
-                    break;
-                case 'interact': {
-                    const [data, metadata = null] = args;
-                    const {
-                        cueId = this.statefulCue !== null ? this.statefulCue.id : null,
-                        userId,
-                    } = metadata || {};
-                    if (cueId !== null) {
-                        await this.interactOnCue(cueId, data, userId);
-                    } else {
-                        await this.interact(data, userId);
-                    }
-                    break;
-                }
-                case 'cue': {
-                    const [cueId, ...otherArgs] = args;
-                    await this.cue(cueId, otherArgs);
-                    break;
-                }
-                case 'uncue':
-                    await this.uncue();
-                    break;
-                case 'stop':
-                    // Maybe kill the server on this one
-                    // await this.stop();
-                    break;
-                case 'end':
-                    // End of the show
-                    await this.end();
-                    break;
-                case 'reset':
-                    // Reset the current session
-                    await this.reset();
-                    break;
-                default:
-                    break;
+            const { command: finalCommand = command, args: finalArgs = args } =
+                (transformCommand !== null ? transformCommand(command, args) : null) || {};
+
+            if (inputCommands !== null && inputCommands.indexOf(finalCommand) === -1) {
+                this.debug('command not allowed: %s %o', finalCommand, finalArgs);
+                return;
             }
-            this.emit('input:command', command, ...args);
+
+            if (validateCommand !== null && !validateCommand(finalCommand, ...finalArgs)) {
+                this.debug('validateCommand failed: %s %o', finalCommand, finalArgs);
+                return;
+            }
+
+            this.emit('input:command', finalCommand, finalArgs);
+
+            this[finalCommand](...finalArgs);
         } catch (e) {
             this.debug(`Error with command "${command}": ${e.message}`);
         }
     }
 
-    async ensureInteraction(data, cueId = null, userId = null) {
-        this.debug('Ensuring interaction... %O', data);
+    async ensureInteraction(data, interactionId) {
+        this.debug('Ensuring interaction %s... %O', interactionId, data);
 
         const interactionIdentifier = {
             sessionId: this.session.id,
+            interactionId,
         };
-
-        if (cueId !== null) {
-            interactionIdentifier.cueId = cueId;
-        }
-
-        if (userId !== null) {
-            interactionIdentifier.userId = userId;
-        }
 
         let interaction = await this.store.findItem('interactions', interactionIdentifier);
         if (interaction !== null) {
@@ -510,11 +450,12 @@ class Application extends EventEmitter {
         });
     }
 
-    async setSessionCue(cue) {
+    async setSessionCue(cue, extraData) {
         const { id, handle } = this.session;
         this.debug('Setting session "%s" cue... %o', handle, cue);
         this.session = await this.store.updateItem('sessions', id, {
             cue: cue !== null ? cue.id : null,
+            data: extraData,
         });
     }
 
@@ -554,11 +495,20 @@ class Application extends EventEmitter {
         );
     }
 
-    sendCueToOutputs(cue) {
-        this.debug('Send cue to outputs: %O', cue);
+    sendCueToOutputs(cue, extraData = null) {
+        this.debug('Send cue to outputs: %O %O', cue, extraData);
         return Promise.all(
             this.outputs.map((it) =>
-                typeof it.cue !== 'undefined' ? it.cue(cue) : Promise.resolve(),
+                typeof it.cue !== 'undefined' ? it.cue(cue, extraData) : Promise.resolve(),
+            ),
+        );
+    }
+
+    sendInteractToOutputs(data, interactionId) {
+        this.debug('Send interact to outputs: %O %s', data, interactionId);
+        return Promise.all(
+            this.outputs.map((it) =>
+                typeof it.interact !== 'undefined' ? it.interact(data, interactionId) : Promise.resolve(),
             ),
         );
     }
@@ -567,7 +517,7 @@ class Application extends EventEmitter {
         this.debug('Send interaction to outputs: %O', interaction);
         return Promise.all(
             this.outputs.map((it) =>
-                typeof it.cue !== 'undefined' ? it.interact(interaction) : Promise.resolve(),
+                typeof it.interaction !== 'undefined' ? it.interaction(interaction) : Promise.resolve(),
             ),
         );
     }
@@ -576,7 +526,7 @@ class Application extends EventEmitter {
         this.debug(`Send command to outputs: %s %o`, command, args);
         return Promise.all(
             this.outputs.map((it) =>
-                typeof it.cue !== 'undefined' ? it.command(command, ...args) : Promise.resolve(),
+                typeof it.command !== 'undefined' ? it.command(command, ...args) : Promise.resolve(),
             ),
         );
     }

@@ -37,11 +37,14 @@ class OscInput extends Base {
     }
 
     onMessage(message) {
+        const { transformCommand = null } = this.options;
         const [oscPath = null, ...args] = message;
         const command = oscPath.replace(/^\//, '');
-        if (command !== null && (this.commands === null || this.commands.indexOf(command) !== -1)) {
-            this.debug('command: %s %o', command, args);
-            this.emit('command', command, ...args);
+        const { command: finalCommand = command, args: finalArgs = args } =
+            (transformCommand !== null ? transformCommand(command, args) : null) || {};
+        if (this.commands === null || this.commands.indexOf(finalCommand) !== -1) {
+            this.debug('command: %s %o', finalCommand, finalArgs);
+            this.emit('command', finalCommand, ...finalArgs);
         }
     }
 }

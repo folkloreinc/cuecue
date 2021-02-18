@@ -11,25 +11,33 @@ class PubNubOutput extends Base {
         this.debug = createDebug('cuecue:output:pubnub');
     }
 
-    cue(cue) {
-        this.command('cue', cue);
+    cue(cue, extraData = null) {
+        this.command('cue', cue, extraData);
     }
 
-    interact(interaction) {
+    interaction(interaction) {
         this.command('interaction', interaction);
+    }
+
+    interact(data, interactionId = null) {
+        this.command('interact', data, interactionId);
     }
 
     command(command, ...args) {
         this.debug('command: %s message: %o', command, args);
-        const { channel } = this.options;
+        const { channel, transformCommand = null, transformMessage = null } = this.options;
+        const { command: finalCommand = command, args: finalArgs = args } =
+            (transformCommand !== null ? transformCommand(command, args) : null) || {};
+        const message = {
+            command: finalCommand,
+            args: finalArgs,
+        };
         const payload = {
             channel,
-            message: {
-                command,
-                args,
-            },
+            message: transformMessage !== null ? transformMessage(message) : message,
         };
         return new Promise((resolve, reject) => {
+            this.debug('publish payload %O', payload);
             this.client.publish(payload, (status) => {
                 if (status.error) {
                     this.debug('command error: %s %O', command, status);

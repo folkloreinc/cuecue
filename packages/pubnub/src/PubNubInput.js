@@ -55,10 +55,13 @@ class PubNubInput extends Base {
     }
 
     onMessage({ message = null }) {
-        const { command = null, args = [] } = message || {};
-        if (command !== null && (this.commands === null || this.commands.indexOf(command) !== -1)) {
-            this.debug('command: %s args: %o', command, args);
-            this.emit('command', command, ...(isArray(args) ? args : [args]));
+        const { transformMessage = null, transformCommand = null } = this.options;
+        const { command = null, args = [] } = (transformMessage !== null ? transformMessage(message) : message) || {};
+        const { command: finalCommand = command, args: finalArgs = args } =
+            (transformCommand !== null ? transformCommand(command, args) : null) || {};
+        if (this.commands === null || this.commands.indexOf(finalCommand) !== -1) {
+            this.debug('command: %s args: %o', finalCommand, finalArgs);
+            this.emit('command', command, ...finalArgs);
         } else {
             this.debug('message: %o', message);
         }
