@@ -17,6 +17,10 @@ class Application extends EventEmitter {
         this.options = {
             store: new MemoryStore(),
             debugFunction: createDebug('cuecue:app'),
+            validateCommand: (command) =>
+                ['start', 'end', 'cue', 'uncue', 'interact', 'reset', 'restart', 'kill'].indexOf(
+                    command,
+                ) !== -1,
             ...opts,
         };
 
@@ -42,6 +46,7 @@ class Application extends EventEmitter {
         this.onStop = this.onStop.bind(this);
         this.onStopped = this.onStopped.bind(this);
         this.onInputCommand = this.onInputCommand.bind(this);
+        this.onAfterTransition = this.onAfterTransition.bind(this);
         this.onInvalidTransition = this.onInvalidTransition.bind(this);
         this.onPendingTransition = this.onPendingTransition.bind(this);
 
@@ -67,6 +72,7 @@ class Application extends EventEmitter {
                 onBeforeEnd: this.onEnd,
                 onBeforeStop: this.onStop,
                 onAfterStop: this.onStopped,
+                onAfterTransition: this.onAfterTransition,
                 onInvalidTransition: this.onInvalidTransition,
                 onPendingTransition: this.onPendingTransition,
             },
@@ -123,6 +129,17 @@ class Application extends EventEmitter {
         await this.resetInteractions();
         await this.resetSession();
         await this.uncue();
+    }
+
+    async restart() {
+        this.destroy();
+        await this.start();
+    }
+
+    // eslint-disable-next-line class-methods-use-this
+    kill() {
+        // Test this with something else than nodemon
+        process.kill(process.pid, 'SIGUSR2');
     }
 
     initialized() {
@@ -198,6 +215,12 @@ class Application extends EventEmitter {
                 this.once('initialized', resolve);
             }
         });
+    }
+
+    async onAfterTransition(lastTransition) {
+        const { transition, from, to } = lastTransition || {};
+        this.debug('After transition: %O from: %s to: %s', transition, from, to);
+        await this.sendCommandToOutputs('state', { name: transition, from, to });
     }
 
     async onInit() {
@@ -288,13 +311,12 @@ class Application extends EventEmitter {
         const { cues = [] } = this.definition || {};
         const cue = cues.find(({ id }) => id === cueId) || null;
 
-        this.debug('Cuuu %O', cue);
-
         if (cue === null) {
+            this.debug('Cannot find cue %s', cueId);
             return false;
         }
 
-        this.debug('Cue %s', cueId);
+        // this.debug('Cue ID %s %O', cueId, extraData);
 
         const { stateful = false } = cue;
         if (stateful) {
@@ -307,7 +329,7 @@ class Application extends EventEmitter {
 
         this.emit('cue', cue, extraData);
 
-        this.debug('onCue %s %O', cueId, extraData);
+        // this.debug('onCue %s %O', cueId, extraData);
 
         return true;
     }
@@ -363,6 +385,7 @@ class Application extends EventEmitter {
             this.emit('input:command', finalCommand, finalArgs);
 
             this[finalCommand](...finalArgs);
+            this.debug(this[finalCommand], finalArgs);
         } catch (e) {
             this.debug(`Error with command "${command}": ${e.message}`);
         }
@@ -508,7 +531,9 @@ class Application extends EventEmitter {
         this.debug('Send interact to outputs: %O %s', data, interactionId);
         return Promise.all(
             this.outputs.map((it) =>
-                typeof it.interact !== 'undefined' ? it.interact(data, interactionId) : Promise.resolve(),
+                typeof it.interact !== 'undefined'
+                    ? it.interact(data, interactionId)
+                    : Promise.resolve(),
             ),
         );
     }
@@ -517,7 +542,9 @@ class Application extends EventEmitter {
         this.debug('Send interaction to outputs: %O', interaction);
         return Promise.all(
             this.outputs.map((it) =>
-                typeof it.interaction !== 'undefined' ? it.interaction(interaction) : Promise.resolve(),
+                typeof it.interaction !== 'undefined'
+                    ? it.interaction(interaction)
+                    : Promise.resolve(),
             ),
         );
     }
@@ -526,7 +553,9 @@ class Application extends EventEmitter {
         this.debug(`Send command to outputs: %s %o`, command, args);
         return Promise.all(
             this.outputs.map((it) =>
-                typeof it.command !== 'undefined' ? it.command(command, ...args) : Promise.resolve(),
+                typeof it.command !== 'undefined'
+                    ? it.command(command, ...args)
+                    : Promise.resolve(),
             ),
         );
     }

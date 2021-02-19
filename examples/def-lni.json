@@ -1,0 +1,30 @@
+{
+    "id": "lni",
+    "cues": [
+        {
+            "id": "logo",
+            "type": "slide",
+            "stateful": true
+        },
+        {
+            "id": "hand",
+            "type": "slide",
+            "stateful": true
+        },
+        {
+            "id": "question",
+            "type": "slide",
+            "stateful": true
+        },
+        {
+            "id": "vote",
+            "type": "slide",
+            "stateful": true
+        },
+        {
+            "id": "winner",
+            "type": "slide",
+            "stateful": true
+        }
+    ]
+}

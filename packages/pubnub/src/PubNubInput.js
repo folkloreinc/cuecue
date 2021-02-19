@@ -8,9 +8,7 @@ class PubNubInput extends Base {
             channel: process.env.PUBNUB_CHANNEL || 'cuecue:input',
             ...opts,
         });
-
         this.onMessage = this.onMessage.bind(this);
-
         this.commands = commands;
         this.debug = createDebug('cuecue:input:pubnub');
     }
@@ -56,7 +54,8 @@ class PubNubInput extends Base {
 
     onMessage({ message = null }) {
         const { transformMessage = null, transformCommand = null } = this.options;
-        const { command = null, args = [] } = (transformMessage !== null ? transformMessage(message) : message) || {};
+        const { command = null, args = [] } =
+            (transformMessage !== null ? transformMessage(message) : message) || {};
         const { command: finalCommand = command, args: finalArgs = args } =
             (transformCommand !== null ? transformCommand(command, args) : null) || {};
         if (this.commands === null || this.commands.indexOf(finalCommand) !== -1) {

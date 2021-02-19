@@ -7,7 +7,6 @@ class PubNubOutput extends Base {
             channel: process.env.PUBNUB_CHANNEL || 'cuecue:output',
             ...opts,
         });
-
         this.debug = createDebug('cuecue:output:pubnub');
     }
 
@@ -26,8 +25,11 @@ class PubNubOutput extends Base {
     command(command, ...args) {
         this.debug('command: %s message: %o', command, args);
         const { channel, transformCommand = null, transformMessage = null } = this.options;
-        const { command: finalCommand = command, args: finalArgs = args } =
-            (transformCommand !== null ? transformCommand(command, args) : null) || {};
+        const { command: finalCommand = command, args: finalArgs = args } = (transformCommand !==
+        null
+            ? transformCommand(command, args)
+            : null) || { command, args };
+
         const message = {
             command: finalCommand,
             args: finalArgs,
@@ -36,6 +38,7 @@ class PubNubOutput extends Base {
             channel,
             message: transformMessage !== null ? transformMessage(message) : message,
         };
+
         return new Promise((resolve, reject) => {
             this.debug('publish payload %O', payload);
             this.client.publish(payload, (status) => {
