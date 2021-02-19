@@ -2,6 +2,11 @@
     "id": "lni",
     "cues": [
         {
+            "id": "generic",
+            "type": "slide",
+            "stateful": true
+        },
+        {
             "id": "logo",
             "type": "slide",
             "stateful": true
