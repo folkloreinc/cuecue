@@ -24,9 +24,20 @@ class PubNubInput extends Base {
         this.client.addListener({
             message: this.onMessage,
         });
+
+        const { channel } = this.options;
+
+        this.client.subscribe({
+            channels: isArray(channel) ? channel : [channel],
+        });
     }
 
     async onDestroy() {
+        const { channel } = this.options;
+        this.client.unsubscribe({
+            channels: isArray(channel) ? channel : [channel],
+        });
+
         this.client.removeListener({
             message: this.onMessage,
         });
@@ -34,22 +45,12 @@ class PubNubInput extends Base {
         await super.onDestroy();
     }
 
-    async onStart() {
-        await super.onStart();
-
-        const { channel } = this.options;
-        this.client.subscribe({
-            channels: isArray(channel) ? channel : [channel],
-        });
+    async onStart(session) {
+        await super.onStart(session);
     }
 
-    async onStop() {
-        await super.onStop();
-
-        const { channel } = this.options;
-        this.client.unsubscribe({
-            channels: isArray(channel) ? channel : [channel],
-        });
+    async onStop(session) {
+        await super.onStop(session);
     }
 
     onMessage({ message = null }) {

@@ -38,13 +38,22 @@
         "cuecue": "./bin/cuecue.js"
     },
     "scripts": {
-        "prepare": "../../scripts/prepare-package.sh"
+        "prepare": "../../scripts/prepare-package.sh",
+        "osc-output": "npm run babel-node -- ./src/bin/osc-output.js",
+        "pubnub-output": "npm run babel-node -- ./src/bin/pubnub-output.js"
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
-        "commander": "^7.0.0"
+        "@cuecue/osc": "^0.0.4",
+        "@cuecue/pubnub": "^0.0.4",
+        "commander": "^7.0.0",
+        "dotenv": "^8.2.0"
     },
     "publishConfig": {
         "access": "public"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.12.17",
+        "@babel/node": "^7.12.17"
     }
 }

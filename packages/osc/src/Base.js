@@ -8,30 +8,19 @@ class Base extends BasePlugin {
             host: process.env.OSC_HOST || '0.0.0.0',
             ...opts,
         });
-        
+
         this.osc = null;
         this.debug = createDebug('cuecue:osc');
     }
 
-    onStarted() {
+    async onInitialized() {
         const { host, port } = this.options;
         this.debug('started on %s:%s', host, port);
-        return process.nextTick(() => this.emit('started'));
+        await super.onInitialized();
     }
 
     async onDestroy() {
         await super.onDestroy();
-        
-        return new Promise((resolve) => {
-            this.osc.close(() => {
-                resolve();
-            });
-        });
-    }
-
-    async onStop() {
-        await super.onStop();
-        
         return new Promise((resolve) => {
             this.osc.close(() => {
                 resolve();

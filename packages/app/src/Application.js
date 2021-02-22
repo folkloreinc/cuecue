@@ -417,19 +417,20 @@ class Application extends EventEmitter {
     async ensureSession() {
         const { id, getHandle } = this.definition;
 
-        const handle = getHandle(id);
-
-        this.debug('Ensuring session "%s"...', handle);
+        this.debug('Getting started session...');
 
         const item = await this.store.findItem('sessions', {
             definition: id,
-            handle,
+            started: true,
+            ended: false,
         });
 
         if (item !== null) {
-            this.debug('Session found.');
+            this.debug('Session found %s.', item.handle);
             return item;
         }
+
+        const handle = getHandle(id);
 
         this.debug('Creating new session "%s"...', handle);
 

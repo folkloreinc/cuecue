@@ -7,8 +7,13 @@ import Base from './Base';
 class OscOutput extends Base {
     constructor(opts) {
         super(opts);
-
         this.debug = createDebug('cuecue:output:osc');
+    }
+
+    async onInit() {
+        await super.onInit();
+        const { host, port } = this.options;
+        this.osc = new Client(host, port);
     }
 
     cue(cue, extraData = null) {
@@ -25,8 +30,10 @@ class OscOutput extends Base {
 
     command(command, ...args) {
         const { transformCommand = null } = this.options;
-        const { command: finalCommand = command, args: finalArgs = args } =
-            (transformCommand !== null ? transformCommand(command, args) : null) || {};
+        const { command: finalCommand = command, args: finalArgs = args } = (transformCommand !==
+        null
+            ? transformCommand(command, args)
+            : null) || { command, args };
 
         this.debug('command: %s %o', finalCommand, finalArgs);
 
@@ -43,12 +50,6 @@ class OscOutput extends Base {
                 resolve();
             });
         });
-    }
-
-    async onStart() {
-        await super.onStart();
-        const { port, host } = this.options;
-        this.osc = new Client(host, port);
     }
 }
 

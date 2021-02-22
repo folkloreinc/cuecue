@@ -6,7 +6,8 @@
         "example:server": "DEBUG='cuecue:*' npm run babel-node -- ./examples/server.js",
         "example:lni": "DEBUG='cuecue:*' npm run babel-node -- ./examples/lni.js",
         "example:treizelunes": "DEBUG='cuecue:*' npm run babel-node -- ./examples/treizelunes.js",
-        "debug:lni": "DEBUG='cuecue:*' nodemon --exec npm run babel-node -- ./examples/lni.js"
+        "debug:lni": "DEBUG='cuecue:*' nodemon --exec npm run babel-node -- ./examples/lni.js",
+        "debug:treizelunes": "DEBUG='cuecue:*' nodemon --exec npm run babel-node -- ./examples/treizelunes.js"
     },
     "repository": {
         "type": "git",

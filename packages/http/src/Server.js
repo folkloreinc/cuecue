@@ -49,7 +49,7 @@ class Server extends EventEmitter {
                 onAfterStop: this.onStopped,
             },
         });
-        
+
         this.init();
     }
 
@@ -92,7 +92,7 @@ class Server extends EventEmitter {
         return this.app.use(...args);
     }
 
-    onInit() {
+    async onInit() {
         this.emit('init');
 
         this.app = express();
@@ -110,22 +110,24 @@ class Server extends EventEmitter {
 
         // Use express-session middleware for express
         this.app.use(this.session);
+
+        await this.startServer();
     }
 
     onInitialized() {
         this.debug('initialized');
-
         return process.nextTick(() => this.emit('initialized'));
     }
 
     async onDestroy() {
         this.debug('destroying...');
-
         this.emit('destroy');
 
         try {
             await this.stopServer();
-        } catch (e) {} // eslint-disable-line no-empty
+        } catch (e) {
+            console.log(e); // eslint-disable-line
+        }
 
         this.app = null;
         this.http = null;
@@ -133,34 +135,26 @@ class Server extends EventEmitter {
 
     onDestroyed() {
         this.debug('destroyed');
-
         return process.nextTick(() => this.emit('destroyed'));
     }
 
     onStart() {
         this.debug('starting...');
-
         this.emit('start');
-
-        return this.startServer();
     }
 
     onStarted() {
         const { port } = this.options;
         this.debug(`started on *:${port}`);
-
         return process.nextTick(() => this.emit('started'));
     }
 
-    async onStop() {
+    onStop() {
         this.emit('stop');
-
-        await this.stopServer();
     }
 
     onStopped() {
         this.debug('Stopped.');
-
         return process.nextTick(() => this.emit('stopped'));
     }
 
