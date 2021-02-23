@@ -5,7 +5,7 @@ import Base from './Base';
 class PubNubInput extends Base {
     constructor({ commands = null, ...opts } = {}) {
         super({
-            channel: process.env.PUBNUB_CHANNEL || 'cuecue:input',
+            channel: process.env.PUBNUB_INPUT_CHANNEL || 'cuecue:input',
             ...opts,
         });
         this.onMessage = this.onMessage.bind(this);
