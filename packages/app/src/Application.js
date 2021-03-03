@@ -160,13 +160,11 @@ class Application extends EventEmitter {
 
     input(input) {
         this.inputs = [...this.inputs, input];
-
         input.on('command', this.onInputCommand);
     }
 
     removeInput(input) {
         input.off('command', this.onInputCommand);
-
         this.inputs = this.inputs.filter((it) => it !== input);
     }
 
@@ -197,6 +195,13 @@ class Application extends EventEmitter {
         });
     }
 
+    getInteractionsByInteractionId(interactionId) {
+        return this.store.getItems('interactions  ', {
+            sessionId: this.session.id,
+            interactionId,
+        });
+    }
+
     getInteractionsByUser(userId) {
         return this.store.getItems('interactions  ', {
             sessionId: this.session.id,
@@ -220,7 +225,9 @@ class Application extends EventEmitter {
     async onAfterTransition(lastTransition) {
         const { transition, from, to } = lastTransition || {};
         this.debug('After transition: %O from: %s to: %s', transition, from, to);
-        await this.sendCommandToOutputs('state', { name: transition, from, to });
+        if (transition !== 'init') {
+            await this.sendCommandToOutputs('state', { name: transition, from, to });
+        }
     }
 
     async onInit() {
@@ -362,13 +369,13 @@ class Application extends EventEmitter {
     async onInputCommand(command, ...args) {
         this.debug('onInputCommand %s', command, args);
 
-        const {
-            inputCommands = null,
-            validateCommand = null,
-            transformCommand = null,
-        } = this.options;
-
         try {
+            const {
+                inputCommands = null,
+                validateCommand = null,
+                transformCommand = null,
+            } = this.options;
+
             const { command: finalCommand = command, args: finalArgs = args } =
                 (transformCommand !== null ? transformCommand(command, args) : null) || {};
 
@@ -481,6 +488,11 @@ class Application extends EventEmitter {
             cue: cue !== null ? cue.id : null,
             data: extraData,
         });
+    }
+
+    getSessionCue() {
+        const { cue = null, data = null } = this.session || {};
+        return { cue, data };
     }
 
     initInputs() {

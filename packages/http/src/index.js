@@ -1,5 +1,3 @@
-import Server from './Server';
-
 export { default as createApi } from './createApi';
-
-export default Server;
+export { default as HttpInput } from './HttpInput';
+// export { default as Server } from './Server';

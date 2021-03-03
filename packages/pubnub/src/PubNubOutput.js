@@ -24,6 +24,7 @@ class PubNubOutput extends Base {
 
     command(command, ...args) {
         this.debug('command: %s message: %o', command, args);
+
         const { channel, transformCommand = null, transformMessage = null } = this.options;
         const { command: finalCommand = command, args: finalArgs = args } = (transformCommand !==
         null
@@ -34,6 +35,7 @@ class PubNubOutput extends Base {
             command: finalCommand,
             args: finalArgs,
         };
+
         const payload = {
             channel,
             message: transformMessage !== null ? transformMessage(message) : message,
@@ -41,15 +43,19 @@ class PubNubOutput extends Base {
 
         return new Promise((resolve, reject) => {
             this.debug('publish payload %O', payload);
-            this.client.publish(payload, (status) => {
-                if (status.error) {
-                    this.debug('command error: %s %O', command, status);
-                    reject(status.error);
-                    return;
-                }
-                this.debug('command success: %s', command);
-                resolve();
-            });
+
+            try {
+                this.client.publish(payload, (status, response) => {
+                    if (status.error) {
+                        this.debug('publish error: %s %O %O', command, status, response);
+                        reject(status.error);
+                    }
+                    this.debug('publish success: %s', command);
+                    resolve();
+                });
+            } catch (e) {
+                reject();
+            }
         });
     }
 }

@@ -1,9 +1,7 @@
 import { Router } from 'express';
-import HttpInput from './HttpInput';
 
-const createApi = (app) => {
-    const router = new Router();
-    const input = new HttpInput();
+const createApi = (app, input, externalRouter = null) => {
+    const router = externalRouter === null ? new Router() : externalRouter;
 
     const sendNotFound = (res) => {
         res.status(404).json({
@@ -13,6 +11,10 @@ const createApi = (app) => {
     };
 
     const getUserId = (req) => req.header('X-User-Id') || null;
+
+    router.get('/', async (req, res) => {
+        res.json({ message: 'Welcome' });
+    });
 
     router.get('/cues', async (req, res) => {
         const cues = await app.cues();
@@ -122,7 +124,7 @@ const createApi = (app) => {
         }
     });
 
-    return { router, input };
+    return router;
 };
 
 export default createApi;

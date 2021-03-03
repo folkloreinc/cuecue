@@ -9,6 +9,7 @@ class PubNubInput extends Base {
             ...opts,
         });
         this.onMessage = this.onMessage.bind(this);
+        this.onPresence = this.onPresence.bind(this);
         this.commands = commands;
         this.debug = createDebug('cuecue:input:pubnub');
     }
@@ -23,12 +24,14 @@ class PubNubInput extends Base {
 
         this.client.addListener({
             message: this.onMessage,
+            presence: this.onPresence,
         });
 
-        const { channel } = this.options;
+        const { channel, presence = false } = this.options;
 
         this.client.subscribe({
             channels: isArray(channel) ? channel : [channel],
+            withPresence: presence,
         });
     }
 
@@ -40,6 +43,7 @@ class PubNubInput extends Base {
 
         this.client.removeListener({
             message: this.onMessage,
+            presence: this.onPresence,
         });
 
         await super.onDestroy();
@@ -64,6 +68,19 @@ class PubNubInput extends Base {
             this.emit('command', command, ...finalArgs);
         } else {
             this.debug('message: %o', message);
+        }
+    }
+
+    onPresence(presenceEvent) {
+        const { transformPresence = null } = this.options;
+        const { action = null } = presenceEvent || {};
+        this.debug('presence: %s event: %o', action, presenceEvent);
+
+        const { command = null, args = [] } =
+            (transformPresence !== null ? transformPresence(action) : null) || {};
+
+        if (command !== null) {
+            this.emit('command', command, ...args);
         }
     }
 }
