@@ -65,7 +65,7 @@ class PubNubInput extends Base {
             (transformCommand !== null ? transformCommand(command, args) : null) || {};
         if (this.commands === null || this.commands.indexOf(finalCommand) !== -1) {
             this.debug('command: %s args: %o', finalCommand, finalArgs);
-            this.emit('command', command, ...finalArgs);
+            this.emit('command', command, ...(isArray(finalArgs) ? finalArgs : [finalArgs]));
         } else {
             this.debug('message: %o', message);
         }

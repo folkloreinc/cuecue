@@ -18,9 +18,17 @@ class Application extends EventEmitter {
             store: new MemoryStore(),
             debugFunction: createDebug('cuecue:app'),
             validateCommand: (command) =>
-                ['start', 'end', 'cue', 'uncue', 'interact', 'reset', 'restart', 'kill'].indexOf(
-                    command,
-                ) !== -1,
+                [
+                    'start',
+                    'end',
+                    'cue',
+                    'uncue',
+                    'define',
+                    'interact',
+                    'reset',
+                    'restart',
+                    'kill',
+                ].indexOf(command) !== -1,
             ...opts,
         };
 
@@ -113,16 +121,28 @@ class Application extends EventEmitter {
 
     async interact(data, interactionId = null) {
         this.sendInteractToOutputs(data, interactionId);
-
         const interaction = await this.ensureInteraction(data, interactionId || uuidv4());
-
         this.sendInteractionToOutputs(interaction);
-
         return interaction;
     }
 
     uncue() {
         return this.state.uncue();
+    }
+
+    define(...newCues) {
+        const cues = this.cues();
+        const mergedArray = [...cues, ...newCues];
+        const set = new Set();
+        const mergedCues = mergedArray.filter((item) => {
+            if (!set.has(item.id)) {
+                set.add(item.id);
+                return true;
+            }
+            return false;
+        }, set);
+        this.debug('ok %O', mergedCues);
+        this.definition.cues = [...mergedCues];
     }
 
     async reset() {
