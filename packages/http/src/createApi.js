@@ -21,6 +21,30 @@ const createApi = (app, input, externalRouter = null) => {
         res.json(cues);
     });
 
+    router.get('/cues/current', async (req, res) => {
+        const { cue, data } = await app.getSessionCue();
+        res.json({ cue, data });
+    });
+
+    router.post('/cues/define', async (req, res) => {
+        const { body = null } = req || {};
+        if (body === null) {
+            sendNotFound(res);
+            return;
+        }
+
+        try {
+            await app.define(body);
+            res.json({
+                success: true,
+            });
+        } catch (e) {
+            res.json({
+                success: false,
+            });
+        }
+    });
+
     router.get('/cues/:id', async (req, res) => {
         const cues = await app.cues();
         const cue = cues.find((it) => it.id === req.params.id) || null;
@@ -51,7 +75,7 @@ const createApi = (app, input, externalRouter = null) => {
         }
     });
 
-    router.post('/cues/:id/hide', async (req, res) => {
+    router.post('/cues/:id/wait', async (req, res) => {
         const cues = await app.cues();
         const cue = cues.find((it) => it.id === req.params.id) || null;
         if (cue === null) {
@@ -61,6 +85,19 @@ const createApi = (app, input, externalRouter = null) => {
 
         try {
             await input.wait();
+            res.json({
+                success: true,
+            });
+        } catch (e) {
+            res.json({
+                success: false,
+            });
+        }
+    });
+
+    router.post('/uncue', async (req, res) => {
+        try {
+            await app.uncue();
             res.json({
                 success: true,
             });
@@ -122,6 +159,34 @@ const createApi = (app, input, externalRouter = null) => {
                 success: false,
             });
         }
+    });
+
+    router.get('/session', async (req, res) => {
+        const { session } = app;
+        if (session === null) {
+            sendNotFound(res);
+            return;
+        }
+        res.json(session);
+    });
+
+    router.get('/session/state', async (req, res) => {
+        const { state } = app.state;
+        if (state === null) {
+            sendNotFound(res);
+            return;
+        }
+        res.json(state);
+    });
+
+    router.get('/session/:id', async (req, res) => {
+        const { session } = app;
+        // TODO: Find a session?
+        if (session === null) {
+            sendNotFound(res);
+            return;
+        }
+        res.json(session);
     });
 
     return router;

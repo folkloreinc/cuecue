@@ -28,7 +28,9 @@ router.post('/text', async (req, res) => {
         const { Body: body = '', From: from = uuid() } = req.body || {};
         const { cue: cueId = 'cue-type', data = {} } = app.getSessionCue();
         const { answers = [], questionId = null } = data || {};
-        const uniqueId = `${questionId || 'my-question-id'}-${from}`;
+
+        // Remove uuid to make the replys one by phone number + fix front in case
+        const uniqueId = `${questionId || 'my-question-id'}-${from}-${uuid()}`;
 
         debug('TEXT MESSAGE %s %s %s', body, from, uniqueId);
 
