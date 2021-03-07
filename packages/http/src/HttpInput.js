@@ -82,7 +82,7 @@ class HttpInput extends BaseInput {
         try {
             await this.stopServer();
         } catch (e) {
-            console.log(e); // eslint-disable-line
+            this.debug('destroy error %O', e);
         }
 
         this.express = null;
