@@ -49,14 +49,6 @@ class PubNubInput extends Base {
         await super.onDestroy();
     }
 
-    async onStart(session) {
-        await super.onStart(session);
-    }
-
-    async onStop(session) {
-        await super.onStop(session);
-    }
-
     onMessage({ message = null }) {
         const { transformMessage = null, transformCommand = null } = this.options;
         const { command = null, args = [] } =

@@ -18,6 +18,7 @@ class BasePlugin extends EventEmitter {
         this.onStop = this.onStop.bind(this);
         this.onStopped = this.onStopped.bind(this);
         this.onPendingTransition = this.onPendingTransition.bind(this);
+        this.onInvalidTransition = this.onInvalidTransition.bind(this);
 
         this.debug = createDebug('cuecue:input');
 
@@ -38,6 +39,7 @@ class BasePlugin extends EventEmitter {
                 onBeforeStop: this.onStop,
                 onAfterStop: this.onStopped,
                 onPendingTransition: this.onPendingTransition,
+                onInvalidTransition: this.onInvalidTransition,
             },
         });
     }
@@ -70,39 +72,42 @@ class BasePlugin extends EventEmitter {
     }
 
     onInit() {
+        this.debug('onInit');
         this.emit('init');
     }
 
     onInitialized() {
-        this.debug('initialized');
+        this.debug('onInitialized');
         return process.nextTick(() => this.emit('initialized'));
     }
 
     onDestroy() {
-        this.debug('destroying...');
+        this.debug('onDestroy');
         this.emit('destroy');
     }
 
     onDestroyed() {
-        this.debug('destroyed');
+        this.debug('onDestroyed');
         return process.nextTick(() => this.emit('destroyed'));
     }
 
     onStart() {
+        this.debug('onStart');
         this.emit('start');
     }
 
     onStarted() {
-        this.debug('started');
+        this.debug('onStarted');
         return process.nextTick(() => this.emit('started'));
     }
 
     onStop() {
+        this.debug('onStop');
         this.emit('stop');
     }
 
     onStopped() {
-        this.debug('stopped');
+        this.debug('onStopped');
         return process.nextTick(() => this.emit('stopped'));
     }
 
@@ -113,6 +118,11 @@ class BasePlugin extends EventEmitter {
                 this.once('initialized', resolve);
             }
         });
+    }
+
+    onInvalidTransition(transition, from, to) {
+        console.log(this.state.state);
+        this.debug('ERROR: Invalid base transition: %s from: %s to: %s', transition, from, to);
     }
 }
 

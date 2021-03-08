@@ -96,7 +96,8 @@ class Application extends EventEmitter {
     }
 
     async start() {
-        if (!this.initialized()) {
+        if (this.stateless()) {
+            this.debug('First init');
             await this.init();
         }
         return this.state.start();
@@ -149,6 +150,8 @@ class Application extends EventEmitter {
         await this.resetInteractions();
         await this.resetSession();
         await this.uncue();
+
+        this.sendCommandToOutputs('reset');
     }
 
     async restart() {
@@ -160,6 +163,10 @@ class Application extends EventEmitter {
     kill() {
         // Test this with something else than nodemon
         process.kill(process.pid, 'SIGUSR2');
+    }
+
+    stateless() {
+        return this.state.is('none');
     }
 
     initialized() {
@@ -176,6 +183,10 @@ class Application extends EventEmitter {
 
     stopped() {
         return this.state.is('stopped');
+    }
+
+    ended() {
+        return this.state.is('ended');
     }
 
     input(input) {
@@ -203,28 +214,32 @@ class Application extends EventEmitter {
     }
 
     getInteractions() {
+        const { id: sessionId = null } = this.session || {};
         return this.store.getItems('interactions', {
-            sessionId: this.session.id,
+            sessionId,
         });
     }
 
     getInteractionsByCue(cueId) {
+        const { id: sessionId = null } = this.session || {};
         return this.store.getItems('interactions  ', {
-            sessionId: this.session.id,
+            sessionId,
             cueId,
         });
     }
 
     getInteractionsByInteractionId(interactionId) {
+        const { id: sessionId = null } = this.session || {};
         return this.store.getItems('interactions  ', {
-            sessionId: this.session.id,
+            sessionId,
             interactionId,
         });
     }
 
     getInteractionsByUser(userId) {
+        const { id: sessionId = null } = this.session || {};
         return this.store.getItems('interactions  ', {
-            sessionId: this.session.id,
+            sessionId,
             userId,
         });
     }
@@ -295,11 +310,21 @@ class Application extends EventEmitter {
 
         this.session = await this.ensureSession();
 
-        this.debug(`Session #${this.session.id}.`);
+        this.debug('Session #%s', this.session.id);
 
-        await this.startInputs();
+        this.debug('Session WTF %O', this.session);
 
-        await this.startOutputs();
+        try {
+            await this.startInputs();
+
+            await this.startOutputs();
+        } catch (e) {
+            this.debug('Session error %O', e);
+        }
+
+        this.sendCommandToOutputs('start');
+
+        this.debug('Session be4 emit start #%s', this.session.id);
 
         this.emit('start');
     }
@@ -366,6 +391,8 @@ class Application extends EventEmitter {
 
         this.statefulCue = null;
 
+        this.sendCommandToOutputs('stop');
+
         await this.stopInputs();
 
         await this.stopOutputs();
@@ -373,7 +400,6 @@ class Application extends EventEmitter {
 
     onStopped() {
         this.debug('stopped');
-
         return process.nextTick(() => this.emit('stopped'));
     }
 
@@ -382,6 +408,8 @@ class Application extends EventEmitter {
 
         this.session = null;
         this.statefulCue = null;
+
+        this.sendCommandToOutputs('end');
 
         this.emit('ended');
     }
@@ -503,7 +531,7 @@ class Application extends EventEmitter {
 
     async setSessionCue(cue, extraData) {
         const { id, handle } = this.session;
-        this.debug('Setting session "%s" cue... %o', handle, cue);
+        this.debug('Setting session "%s" %s, cue... %o', handle, id, cue);
         this.session = await this.store.updateItem('sessions', id, {
             cue: cue !== null ? cue.id : null,
             data: extraData,
@@ -534,7 +562,7 @@ class Application extends EventEmitter {
     }
 
     startInputs() {
-        this.debug('Start inputs...');
+        this.debug('Start inputs... %s', this.inputs.length);
         return Promise.all(
             this.inputs.map((it) =>
                 typeof it.start !== 'undefined' ? it.start() : Promise.resolve(),
@@ -543,7 +571,7 @@ class Application extends EventEmitter {
     }
 
     startOutputs() {
-        this.debug('Start outputs...');
+        this.debug('Start outputs... %s', this.outputs.length);
         return Promise.all(
             this.outputs.map((it) =>
                 typeof it.start !== 'undefined' ? it.start() : Promise.resolve(),
