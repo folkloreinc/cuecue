@@ -13,13 +13,16 @@ exports.up = (db) =>
                 interactionId: { type: 'string', defaultValue: null },
                 sessionId: { type: 'string', defaultValue: null },
                 cueId: { type: 'string', defaultValue: null },
-                step: { type: 'text', defaultValue: null },
-                data: { type: 'text', defaultValue: null },
+                userId: { type: 'string', defaultValue: null },
+                data: { type: 'json', defaultValue: null },
             },
             ifNotExists: true,
         })
-        .then(() => db.addIndex('interactions', 'handle_index', ['handle'], true))
-        .then(() => db.addIndex('interactions', 'interaction_id_index', ['interaction_id'], true));
+        .then(() => db.addIndex('interactions', 'handle_index', ['handle']))
+        .then(() => db.addIndex('interactions', 'sessionId_index', ['sessionId']))
+        .then(() => db.addIndex('interactions', 'cueId_index', ['cueId']))
+        .then(() => db.addIndex('interactions', 'userId_index', ['userId']))
+        .then(() => db.addIndex('interactions', 'interactionId_index', ['interactionId']));
 
 exports.down = (db) =>
     db.dropTable('interactions', {

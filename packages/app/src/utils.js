@@ -12,6 +12,8 @@ export const terminate = (server = null, options = { coredump: false, timeout: 5
     };
 
     return (code, reason) => (err) => {
+        debug('Err: %O', err, code, reason);
+
         if (err && err instanceof Error) {
             // Log error information somewhere
             debug('Exit: %s %O', err.message, err.stack);
@@ -20,6 +22,7 @@ export const terminate = (server = null, options = { coredump: false, timeout: 5
 
         // Attempt a graceful shutdown
         if (server !== null) {
+            debug('Server: %O', server);
             server.destroy(); // could also call exit on callback here
         }
         setTimeout(exit, options.timeout).unref();

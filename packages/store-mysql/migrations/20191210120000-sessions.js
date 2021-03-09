@@ -11,10 +11,10 @@ exports.up = (db) =>
                 },
                 handle: { type: 'string', defaultValue: null },
                 definition: { type: 'string', defaultValue: null },
+                cue: { type: 'string', defaultValue: null },
                 started: { type: 'bool', defaultValue: false },
                 ended: { type: 'bool', defaultValue: false },
-                cue: { type: 'string', defaultValue: null },
-                data: { type: 'text', defaultValue: null },
+                data: { type: 'json', defaultValue: null },
             },
             ifNotExists: true,
         })

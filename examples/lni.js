@@ -6,6 +6,8 @@ import Fuse from 'fuse.js/dist/fuse.basic';
 
 import Application from '../packages/app/src/Application';
 import { terminate } from '../packages/app/src/utils';
+import MysqlStore from '../packages/store-mysql/src/MysqlStore';
+
 import PubNubOutput from '../packages/pubnub/src/PubNubOutput';
 import PubNubInput from '../packages/pubnub/src/PubNubInput';
 import createApi from '../packages/http/src/createApi';
@@ -17,7 +19,7 @@ dotenv.config();
 
 const debug = createDebug('cuecue:lni:example');
 
-const app = new Application(definition);
+const app = new Application(definition, { store: new MysqlStore() });
 const httpInput = new HttpInput();
 const router = httpInput.getRouter();
 

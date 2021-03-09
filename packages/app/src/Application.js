@@ -324,8 +324,6 @@ class Application extends EventEmitter {
 
         this.sendCommandToOutputs('start');
 
-        this.debug('Session be4 emit start #%s', this.session.id);
-
         this.emit('start');
     }
 
@@ -340,11 +338,11 @@ class Application extends EventEmitter {
             this.emit('idle');
 
             // Recover
-            const { cue = null, ended = false } = this.session;
+            const { cue = null, ended = false, data = null } = this.session;
             if (ended) {
                 this.end();
             } else if (cue !== null) {
-                this.cue(cue);
+                this.cue(cue, data);
             }
         });
     }

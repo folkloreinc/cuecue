@@ -3,6 +3,8 @@ import StateMachine from 'javascript-state-machine';
 import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
 import isObject from 'lodash/isObject';
+import isString from 'lodash/isString';
+import isArray from 'lodash/isArray';
 
 const debug = createDebug('cuecue:store:mysql');
 
@@ -10,6 +12,39 @@ const getWhereFromParams = (params, operator = 'AND') =>
     Object.keys(params)
         .reduce((items, key) => [...items, `${key} = ?`], [])
         .join(` ${operator} `);
+
+const getResult = (result) =>
+    isObject(result)
+        ? Object.keys(result).reduce((acc, key) => {
+              if (key === 'data' && isString(result[key])) {
+                  acc[key] = JSON.parse(result[key]);
+              } else {
+                  acc[key] = result[key];
+              }
+              return acc;
+          }, {})
+        : null;
+
+const getResults = (results) => results.map((res) => getResult(res));
+
+const setInsert = (data) =>
+    isObject(data)
+        ? Object.keys(data).reduce((acc, key) => {
+              if (key === 'data' && (isObject(data[key]) || isArray(data[key]))) {
+                  acc[key] = JSON.stringify(data[key]);
+              } else {
+                  acc[key] = data[key];
+              }
+              return acc;
+          }, {})
+        : null;
+
+const setUpdate = (data) =>
+    Object.keys(data).map((key) =>
+        (isObject(data[key]) || isArray(data[key])) && key === 'data'
+            ? JSON.stringify(data[key])
+            : data[key],
+    );
 
 class MysqlStore extends EventEmitter {
     constructor(opts = {}) {
@@ -34,6 +69,7 @@ class MysqlStore extends EventEmitter {
         this.onDisconnect = this.onDisconnect.bind(this);
         this.onConnected = this.onConnected.bind(this);
         this.onDisconnected = this.onDisconnected.bind(this);
+        this.onInvalidTransition = this.onInvalidTransition.bind(this);
 
         this.client = null;
 
@@ -53,10 +89,9 @@ class MysqlStore extends EventEmitter {
                 onAfterConnect: this.onConnected,
                 onBeforeDisconnect: this.onDisconnect,
                 onAfterDisconnect: this.onDisconnected,
+                onInvalidTransition: this.onInvalidTransition,
             },
         });
-
-        this.init();
     }
 
     init() {
@@ -105,7 +140,9 @@ class MysqlStore extends EventEmitter {
                         reject(error);
                         return;
                     }
-                    resolve(results !== null && results.length === 1 ? results[0] : null);
+                    resolve(
+                        results !== null && results.length === 1 ? getResult(results[0]) : null,
+                    );
                 },
             );
         });
@@ -113,7 +150,7 @@ class MysqlStore extends EventEmitter {
 
     addItem(type, data) {
         return new Promise((resolve, reject) => {
-            this.client.query(`INSERT INTO ${type} SET ?`, data, (error, results) => {
+            this.client.query(`INSERT INTO ${type} SET ?`, setInsert(data), (error, results) => {
                 if (error) {
                     reject(error);
                     return;
@@ -128,7 +165,7 @@ class MysqlStore extends EventEmitter {
             const fields = Object.keys(data)
                 .reduce((items, key) => [...items, `${key} = ?`], [])
                 .join(', ');
-            const values = Object.keys(data).map((key) => data[key]);
+            const values = setUpdate(data);
             this.client.query(
                 `UPDATE ${type} SET ${fields} WHERE id = ?`,
                 [...values, id],
@@ -172,14 +209,12 @@ class MysqlStore extends EventEmitter {
                     reject(error);
                     return;
                 }
-                resolve(results);
+                resolve(getResults(results));
             });
         });
     }
 
-    onInit() {
-        this.emit('init');
-
+    async onInit() {
         const { host, user, password, database, port, autoConnect } = this.options;
 
         this.client = mysql.createConnection({
@@ -193,12 +228,15 @@ class MysqlStore extends EventEmitter {
         if (autoConnect) {
             this.connect();
         }
+
+        this.emit('init');
+
+        return Promise.resolve();
     }
 
     onInitialized() {
         debug('initialized');
-
-        return process.nextTick(() => this.emit('initialized'));
+        this.emit('initialized');
     }
 
     async onDestroy() {
@@ -225,7 +263,6 @@ class MysqlStore extends EventEmitter {
 
     onDestroyed() {
         debug('destroyed');
-
         return process.nextTick(() => this.emit('destroyed'));
     }
 
@@ -269,6 +306,11 @@ class MysqlStore extends EventEmitter {
         debug('disconnected');
 
         return process.nextTick(() => this.emit('disconnected'));
+    }
+
+    onInvalidTransition(transition, from, to) {
+        this.debug('ERROR: Current state', this.state.state);
+        this.debug('ERROR: Invalid base transition: %s from: %s to: %s', transition, from, to);
     }
 }
 
