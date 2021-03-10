@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/http",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "",
     "keywords": [
         "javascript"
@@ -38,7 +38,7 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
-        "@cuecue/core": "^0.0.8",
+        "@cuecue/core": "^0.0.9",
         "body-parser": "^1.19.0",
         "commander": "^7.0.0",
         "cors": "^2.8.5",
