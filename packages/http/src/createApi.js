@@ -17,7 +17,7 @@ const createApi = (app, input, externalRouter = null) => {
     });
 
     router.get('/cues', async (req, res) => {
-        const cues = await app.cues();
+        const cues = await app.getCues();
         res.json(cues);
     });
 
@@ -46,7 +46,7 @@ const createApi = (app, input, externalRouter = null) => {
     });
 
     router.get('/cues/:id', async (req, res) => {
-        const cues = await app.cues();
+        const cues = await app.getCues();
         const cue = cues.find((it) => it.id === req.params.id) || null;
         if (cue === null) {
             sendNotFound(res);
@@ -56,7 +56,7 @@ const createApi = (app, input, externalRouter = null) => {
     });
 
     router.post('/cues/:id/show', async (req, res) => {
-        const cues = await app.cues();
+        const cues = await app.getCues();
         const cue = cues.find((it) => it.id === req.params.id) || null;
         if (cue === null) {
             sendNotFound(res);
@@ -76,7 +76,7 @@ const createApi = (app, input, externalRouter = null) => {
     });
 
     router.post('/cues/:id/wait', async (req, res) => {
-        const cues = await app.cues();
+        const cues = await app.getCues();
         const cue = cues.find((it) => it.id === req.params.id) || null;
         if (cue === null) {
             sendNotFound(res);
@@ -109,7 +109,7 @@ const createApi = (app, input, externalRouter = null) => {
     });
 
     router.get('/cues/:id/interactions', async (req, res) => {
-        const cues = await app.cues();
+        const cues = await app.getCues();
         const cue = cues.find((it) => it.id === req.params.id) || null;
         if (cue === null) {
             sendNotFound(res);
@@ -120,7 +120,7 @@ const createApi = (app, input, externalRouter = null) => {
     });
 
     router.post('/cues/:id/interactions', async (req, res) => {
-        const cues = await app.cues();
+        const cues = await app.getCues();
         const cue = cues.find((it) => it.id === req.params.id) || null;
         if (cue === null) {
             sendNotFound(res);

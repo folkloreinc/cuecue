@@ -160,6 +160,10 @@ class MysqlStore extends EventEmitter {
         }).then(({ insertId }) => this.findItem(type, insertId));
     }
 
+    addItems(type, items) {
+        return Promise.all(items.map((it) => this.addItem(type, it)));
+    }
+
     updateItem(type, id, data) {
         return new Promise((resolve, reject) => {
             const fields = Object.keys(data)
@@ -241,7 +245,6 @@ class MysqlStore extends EventEmitter {
 
     async onDestroy() {
         debug('destroying...');
-
         this.emit('destroy');
 
         await this.disconnect();
@@ -268,7 +271,6 @@ class MysqlStore extends EventEmitter {
 
     onConnect() {
         debug('connecting...');
-
         this.emit('connect');
 
         return new Promise((resolve, reject) => {
@@ -284,7 +286,6 @@ class MysqlStore extends EventEmitter {
 
     onConnected() {
         debug('connected');
-
         return process.nextTick(() => this.emit('connected'));
     }
 

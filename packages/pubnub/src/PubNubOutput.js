@@ -14,6 +14,10 @@ class PubNubOutput extends Base {
         this.command('cue', cue, extraData);
     }
 
+    cues(cues) {
+        this.command('cues', cues);
+    }
+
     interaction(interaction) {
         this.command('interaction', interaction);
     }

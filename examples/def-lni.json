@@ -2,33 +2,38 @@
     "id": "lni",
     "cues": [
         {
-            "id": "generic",
-            "type": "slide",
+            "handle": "logo",
+            "label": "Logo LNI",
+            "type": "logo",
+            "group": null,
             "stateful": true
         },
         {
-            "id": "logo",
-            "type": "slide",
+            "handle": "hand",
+            "label": "Main avec carte",
+            "type": "hand",
+            "group": null,
             "stateful": true
         },
         {
-            "id": "hand",
-            "type": "slide",
+            "handle": "question",
+            "label": "Question",
+            "type": "question",
+            "group": null,
             "stateful": true
         },
         {
-            "id": "question",
-            "type": "slide",
+            "handle": "vote",
+            "label": "Vote",
+            "type": "vote",
+            "group": null,
             "stateful": true
         },
         {
-            "id": "vote",
-            "type": "slide",
-            "stateful": true
-        },
-        {
-            "id": "winner",
-            "type": "slide",
+            "handle": "winner",
+            "label": "Gagnant",
+            "type": "winner",
+            "group": null,
             "stateful": true
         }
     ]

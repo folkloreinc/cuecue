@@ -41,6 +41,11 @@ class MemoryStore extends EventEmitter {
         return savedItem;
     }
 
+    addItems(type, items) {
+        const savedItems = items.map((it) => this.addItem(type, it));
+        return savedItems;
+    }
+
     updateItem(type, id, data) {
         const index = (this.data[type] || []).findIndex((it) => it.id === id);
 
