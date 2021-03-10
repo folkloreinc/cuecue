@@ -13,7 +13,7 @@ const createApi = (app, input, externalRouter = null) => {
     const getUserId = (req) => req.header('X-User-Id') || null;
 
     router.get('/', async (req, res) => {
-        res.json({ message: 'Welcome' });
+        res.json({ message: 'Welcome to CueCue' });
     });
 
     router.get('/cues', async (req, res) => {
@@ -22,8 +22,8 @@ const createApi = (app, input, externalRouter = null) => {
     });
 
     router.get('/cues/current', async (req, res) => {
-        const { cue, data } = await app.getSessionCue();
-        res.json({ cue, data });
+        const cue = await app.getSessionCue();
+        res.json(cue);
     });
 
     router.post('/cues/define', async (req, res) => {

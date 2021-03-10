@@ -31,14 +31,13 @@ class OscInput extends Base {
         await super.onDestroy();
     }
 
-    onMessage(message) {
+    async onMessage(message) {
         const { transformCommand = null } = this.options;
         const [oscPath = null, ...args] = message;
         const command = oscPath.replace(/^\//, '');
-        const { command: finalCommand = command, args: finalArgs = args } = (transformCommand !==
-        null
-            ? transformCommand(command, args)
-            : null) || { command, args };
+        const value =
+            transformCommand !== null ? await transformCommand(command, args) : { command, args };
+        const { command: finalCommand = command, args: finalArgs = args } = value || {};
 
         if (this.commands === null || this.commands.indexOf(finalCommand) !== -1) {
             this.debug('command: %s %o', finalCommand, finalArgs);

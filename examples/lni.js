@@ -14,6 +14,7 @@ import createApi from '../packages/http/src/createApi';
 import definition from './def-lni.json';
 
 import HttpInput from '../packages/http/src/HttpInput';
+import OscInput from '../packages/osc/src/OscInput';
 
 dotenv.config();
 
@@ -28,7 +29,8 @@ router.post('/text', async (req, res) => {
     const twiml = new twilio.twiml.MessagingResponse();
     if (req.body) {
         const { Body: body = '', From: from = uuid() } = req.body || {};
-        const { cue: cueId = 'cue-type', data = {} } = app.getSessionCue();
+        const cue = await app.getSessionCue();
+        const { type, data = {} } = cue || {};
         const { answers = [], questionId = null } = data || {};
 
         // Remove uuid to make the replys one by phone number + fix front in case
@@ -36,7 +38,7 @@ router.post('/text', async (req, res) => {
 
         debug('TEXT MESSAGE %s %s %s', body, from, uniqueId);
 
-        if ((cueId === 'question' || cueId === 'vote') && answers !== null && answers.length > 0) {
+        if ((type === 'question' || type === 'vote') && answers !== null && answers.length > 0) {
             const fuse = new Fuse(answers, {
                 includeScore: true,
                 ignoreLocation: true,
@@ -73,6 +75,27 @@ router.post('/text', async (req, res) => {
 
 httpInput.setRouter(createApi(app, httpInput, router));
 app.input(httpInput);
+app.input(
+    new OscInput({
+        transformCommand: async (command, args) => {
+            if (command === 'interact') {
+                const cue = await app.getSessionCue();
+                debug('sessionCue %O', cue);
+                if (cue !== null) {
+                    const { data = {} } = cue || {};
+                    const { questionId = null } = data || {};
+                    const [value = null] = args || [];
+                    return {
+                        command: 'interact',
+                        args: [{ body: value, from: uuid(), questionId, value }, uuid()],
+                    };
+                }
+                return null;
+            }
+            return { command, args };
+        },
+    }),
+);
 app.input(new PubNubInput());
 app.output(new PubNubOutput());
 

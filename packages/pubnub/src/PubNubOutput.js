@@ -26,13 +26,13 @@ class PubNubOutput extends Base {
         this.command('interact', data, interactionId);
     }
 
-    command(command, ...args) {
+    async command(command, ...args) {
         this.debug('command: %s message: %o', command, args);
 
         const { channel, transformCommand = null, transformMessage = null } = this.options;
         const { command: finalCommand = command, args: finalArgs = args } = (transformCommand !==
         null
-            ? transformCommand(command, args)
+            ? await transformCommand(command, args)
             : null) || { command, args };
 
         const message = {
@@ -42,7 +42,7 @@ class PubNubOutput extends Base {
 
         const payload = {
             channel,
-            message: transformMessage !== null ? transformMessage(message) : message,
+            message: transformMessage !== null ? await transformMessage(message) : message,
         };
 
         return new Promise((resolve, reject) => {

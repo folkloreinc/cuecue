@@ -32,12 +32,11 @@ class OscOutput extends Base {
         this.command('interact', data, interactionId);
     }
 
-    command(command, ...args) {
+    async command(command, ...args) {
         const { transformCommand = null } = this.options;
-        const { command: finalCommand = command, args: finalArgs = args } = (transformCommand !==
-        null
-            ? transformCommand(command, args)
-            : null) || { command, args };
+        const value =
+            transformCommand !== null ? await transformCommand(command, args) : { command, args };
+        const { command: finalCommand = command, args: finalArgs = args } = value || {};
 
         this.debug('command: %s %o', finalCommand, finalArgs);
 

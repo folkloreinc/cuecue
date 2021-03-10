@@ -569,9 +569,14 @@ class Application extends EventEmitter {
 
     async getSessionCue() {
         const cues = await this.getCues();
-        const { cue: cueHandle = null, data = null } = this.session || {};
-        const cue = cues.find((c) => c.handle === cueHandle);
-        return { cue, data };
+        const { cue: cueHandle = null } = this.session || {};
+        const cue = cues.find((c) => c.handle === cueHandle) || null;
+        return cue;
+    }
+
+    getSessionData() {
+        const { data = null } = this.session || {};
+        return data;
     }
 
     initInputs() {

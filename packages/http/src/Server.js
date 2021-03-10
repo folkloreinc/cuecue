@@ -125,6 +125,9 @@ class Server extends EventEmitter {
 
         try {
             await this.stopServer();
+            if (this.session !== null && typeof this.session.close !== 'undefined') {
+                this.session.close();
+            }
         } catch (e) {
             console.log(e); // eslint-disable-line
         }
