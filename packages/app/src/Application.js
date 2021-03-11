@@ -10,7 +10,7 @@ class Application extends EventEmitter {
     constructor(definition, opts = {}) {
         super();
         this.definition = {
-            getHandle: (id) => `${id}_${dayjs().format('YYYY_MM_DD')}`,
+            getHandle: (id) => `${id}_${dayjs().format('YYYY_MM_DD')}_${Date.now().toString(36)}`,
             ...definition,
         };
 
@@ -129,11 +129,11 @@ class Application extends EventEmitter {
     async define(...newCues) {
         const cues = await this.getCues();
         const mergedArray = [...newCues, ...cues]; // The order matters
-        this.debug('humm %O', mergedArray);
+        this.debug('humm %O', newCues, cues);
         const set = new Set();
         const mergedCues = mergedArray.filter((item) => {
-            if (!set.has(item.handle)) {
-                set.add(item.handle);
+            if (!set.has(item.id)) {
+                set.add(item.id);
                 return true;
             }
             return false;
@@ -281,10 +281,11 @@ class Application extends EventEmitter {
     }
 
     async onAfterTransition(lastTransition) {
+        const { id: sessionId = null } = this.session || {};
         const { transition, from, to } = lastTransition || {};
         this.debug('After transition: %O from: %s to: %s', transition, from, to);
         if (transition !== 'init') {
-            await this.sendCommandToOutputs('state', { name: transition, from, to });
+            await this.sendCommandToOutputs('state', { sessionId, currentState: to });
         }
     }
 
@@ -384,20 +385,18 @@ class Application extends EventEmitter {
         this.emit('uncue');
     }
 
-    async onCue(state, cueHandle, sessionData = null) {
+    async onCue(state, cueId, sessionData = null) {
         const cues = await this.getCues();
-        const cue = cues.find(({ handle }) => handle === cueHandle) || null;
+        const cue = cues.find(({ id }) => id === cueId) || null;
 
         if (cue === null) {
-            this.debug('Cannot find cue %s', cueHandle);
+            this.debug('Cannot find cue %s', cueId);
             return false;
         }
 
-        // this.debug('Cue ID %s %O', cueId, sessionData);
-
-        const { handle = null, stateful = false } = cue;
+        const { id = null, stateful = false } = cue;
         if (stateful) {
-            this.debug('Stateful cue: %s', handle);
+            this.debug('Stateful cue: %s', id);
             this.statefulCue = cue;
             await this.setSessionCue(cue, sessionData);
         }
@@ -406,7 +405,7 @@ class Application extends EventEmitter {
 
         this.emit('cue', cue, sessionData);
 
-        // this.debug('onCue %s %O', cueId, sessionData);
+        this.debug('onCue %s %O', cueId, sessionData);
 
         return true;
     }
@@ -475,8 +474,8 @@ class Application extends EventEmitter {
         this.debug('Ensuring interaction %s... %O', interactionId, data);
 
         const interactionIdentifier = {
+            id: interactionId,
             sessionId: this.session.id,
-            interactionId,
         };
 
         let interaction = await this.store.findItem('interactions', interactionIdentifier);
@@ -495,28 +494,28 @@ class Application extends EventEmitter {
     }
 
     async ensureSession() {
-        const { id, getHandle, cues = [] } = this.definition;
+        const { id: definitionId, getHandle, cues = [] } = this.definition;
 
         this.debug('Getting started session...');
 
         const item = await this.store.findItem('sessions', {
-            definition: id,
+            definition: definitionId,
             started: true,
             ended: false,
         });
 
         if (item !== null) {
-            this.debug('Session found %s.', item.handle);
+            this.debug('Session found %s.', item.id);
             return item;
         }
 
-        const handle = getHandle(id);
+        const handle = getHandle(definitionId);
 
         this.debug('Creating new session "%s"...', handle);
 
         const newItem = await this.store.addItem('sessions', {
-            definition: id,
-            handle,
+            id: handle,
+            definition: definitionId,
             started: false,
             ended: false,
             cue: null,
@@ -526,6 +525,8 @@ class Application extends EventEmitter {
 
         await this.setCues(cues, newItem);
 
+        this.debug('New session "%s"', newItem !== null ? newItem.id : null);
+
         return newItem;
     }
 
@@ -533,7 +534,7 @@ class Application extends EventEmitter {
         const { id, handle } = this.session;
         this.debug('Resetting session "%s"...', handle);
         this.session = await this.store.updateItem('sessions', id, {
-            started: false,
+            started: true,
             ended: false,
             cue: null,
         });
@@ -562,15 +563,15 @@ class Application extends EventEmitter {
         const { id, handle } = this.session;
         this.debug('Setting session "%s" %s, cue... %o', handle, id, cue);
         this.session = await this.store.updateItem('sessions', id, {
-            cue: cue !== null ? cue.handle : null,
+            cue: cue !== null ? cue.id : null,
             data: sessionData,
         });
     }
 
     async getSessionCue() {
         const cues = await this.getCues();
-        const { cue: cueHandle = null } = this.session || {};
-        const cue = cues.find((c) => c.handle === cueHandle) || null;
+        const { cue: cueId = null } = this.session || {};
+        const cue = cues.find((c) => c.id === cueId) || null;
         return cue;
     }
 

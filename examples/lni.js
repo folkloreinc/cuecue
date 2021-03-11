@@ -38,7 +38,13 @@ router.post('/text', async (req, res) => {
 
         debug('TEXT MESSAGE %s %s %s', body, from, uniqueId);
 
-        if ((type === 'question' || type === 'vote') && answers !== null && answers.length > 0) {
+        if (type === 'logo') {
+            twiml.message('Bienvenue à la LNI!');
+        } else if (
+            (type === 'question' || type === 'vote') &&
+            answers !== null &&
+            answers.length > 0
+        ) {
             const fuse = new Fuse(answers, {
                 includeScore: true,
                 ignoreLocation: true,
@@ -49,16 +55,16 @@ router.post('/text', async (req, res) => {
             const item = results.length > 0 ? results[0].item : null;
             const { value, label } = item || {};
             if (value) {
-                await httpInput.interact({ body, from, questionId, value }, uniqueId);
-                const interactions = app
-                    .getInteractions()
-                    .filter(
-                        ({ data: interactionData = {} }) =>
-                            interactionData.questionId === questionId &&
-                            interactionData.value === value,
-                    );
+                await app.interact({ body, from, questionId, value }, uniqueId);
+                const interactions = await app.getInteractions();
+                const filteredInteractions = interactions.filter(
+                    ({ data: interactionData = {} }) =>
+                        interactionData.questionId === questionId &&
+                        interactionData.value === value,
+                );
+
                 // debug('Interactions %O', interactions);
-                twiml.message(`Merci! ${label}: ${interactions.length} points`);
+                twiml.message(`Merci! ${label}: ${filteredInteractions.length} points`);
             } else {
                 twiml.message('Nous n’avons pas pu interpréter ce message, veuillez réessayer.');
             }

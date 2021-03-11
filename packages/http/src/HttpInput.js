@@ -28,10 +28,6 @@ class HttpInput extends BaseInput {
         this.emit('command', 'cue', cue, extraData);
     }
 
-    wait() {
-        this.emit('command', 'wait');
-    }
-
     interact(data, interactionId = null) {
         this.emit('command', 'interact', data, interactionId);
     }

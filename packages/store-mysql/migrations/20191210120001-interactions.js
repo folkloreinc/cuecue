@@ -9,20 +9,17 @@ exports.up = (db) =>
                     primaryKey: true,
                     autoIncrement: true,
                 },
-                handle: { type: 'string', defaultValue: null },
-                interactionId: { type: 'string', defaultValue: null },
+                externalId: { type: 'string', defaultValue: null },
                 sessionId: { type: 'string', defaultValue: null },
-                cueId: { type: 'string', defaultValue: null },
-                userId: { type: 'string', defaultValue: null },
                 data: { type: 'json', defaultValue: null },
+                created_at: { type: 'datetime', defaultValue: null },
+                updated_at: { type: 'datetime', defaultValue: null },
+                deleted_at: { type: 'datetime', defaultValue: null },
             },
             ifNotExists: true,
         })
-        .then(() => db.addIndex('interactions', 'handle_index', ['handle']))
-        .then(() => db.addIndex('interactions', 'sessionId_index', ['sessionId']))
-        .then(() => db.addIndex('interactions', 'cueId_index', ['cueId']))
-        .then(() => db.addIndex('interactions', 'userId_index', ['userId']))
-        .then(() => db.addIndex('interactions', 'interactionId_index', ['interactionId']));
+        .then(() => db.addIndex('interactions', 'externalId_index', ['externalId']))
+        .then(() => db.addIndex('interactions', 'sessionId_index', ['sessionId']));
 
 exports.down = (db) =>
     db.dropTable('interactions', {

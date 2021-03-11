@@ -9,16 +9,20 @@ exports.up = (db) =>
                     primaryKey: true,
                     autoIncrement: true,
                 },
-                handle: { type: 'string', defaultValue: null },
+                externalId: { type: 'string', defaultValue: null },
                 definition: { type: 'string', defaultValue: null },
                 cue: { type: 'string', defaultValue: null },
                 started: { type: 'bool', defaultValue: false },
                 ended: { type: 'bool', defaultValue: false },
                 data: { type: 'json', defaultValue: null },
+                created_at: { type: 'datetime', defaultValue: null },
+                updated_at: { type: 'datetime', defaultValue: null },
+                deleted_at: { type: 'datetime', defaultValue: null },
             },
             ifNotExists: true,
         })
-        .then(() => db.addIndex('sessions', 'session_handle_index', ['handle']));
+        .then(() => db.addIndex('sessions', 'externalId_index', ['externalId']))
+        .then(() => db.addIndex('sessions', 'start_end_index', ['started', 'ended']));
 
 exports.down = (db) =>
     db.dropTable('sessions', {

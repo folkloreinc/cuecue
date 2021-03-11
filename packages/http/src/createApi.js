@@ -32,7 +32,6 @@ const createApi = (app, input, externalRouter = null) => {
             sendNotFound(res);
             return;
         }
-
         try {
             await app.define(body);
             res.json({
@@ -55,7 +54,7 @@ const createApi = (app, input, externalRouter = null) => {
         res.json(cue);
     });
 
-    router.post('/cues/:id/show', async (req, res) => {
+    router.post('/cues/:id', async (req, res) => {
         const cues = await app.getCues();
         const cue = cues.find((it) => it.id === req.params.id) || null;
         if (cue === null) {
@@ -64,40 +63,7 @@ const createApi = (app, input, externalRouter = null) => {
         }
 
         try {
-            await input.cue(cue.id);
-            res.json({
-                success: true,
-            });
-        } catch (e) {
-            res.json({
-                success: false,
-            });
-        }
-    });
-
-    router.post('/cues/:id/wait', async (req, res) => {
-        const cues = await app.getCues();
-        const cue = cues.find((it) => it.id === req.params.id) || null;
-        if (cue === null) {
-            sendNotFound(res);
-            return;
-        }
-
-        try {
-            await input.wait();
-            res.json({
-                success: true,
-            });
-        } catch (e) {
-            res.json({
-                success: false,
-            });
-        }
-    });
-
-    router.post('/uncue', async (req, res) => {
-        try {
-            await app.uncue();
+            await input.cue(cue.id, req.body || null);
             res.json({
                 success: true,
             });
@@ -119,17 +85,9 @@ const createApi = (app, input, externalRouter = null) => {
         res.json(interactions);
     });
 
-    router.post('/cues/:id/interactions', async (req, res) => {
-        const cues = await app.getCues();
-        const cue = cues.find((it) => it.id === req.params.id) || null;
-        if (cue === null) {
-            sendNotFound(res);
-            return;
-        }
-
+    router.post('/uncue', async (req, res) => {
         try {
-            const userId = getUserId(req);
-            await input.interactOnCue(cue.id, req.body, userId);
+            await app.uncue();
             res.json({
                 success: true,
             });
@@ -161,22 +119,13 @@ const createApi = (app, input, externalRouter = null) => {
         }
     });
 
-    router.get('/session', async (req, res) => {
+    router.get('/session/current', async (req, res) => {
         const { session } = app;
         if (session === null) {
             sendNotFound(res);
             return;
         }
-        res.json(session);
-    });
-
-    router.get('/session/state', async (req, res) => {
-        const { state } = app.state;
-        if (state === null) {
-            sendNotFound(res);
-            return;
-        }
-        res.json(state);
+        res.json(session.id);
     });
 
     router.get('/session/:id', async (req, res) => {
@@ -187,6 +136,15 @@ const createApi = (app, input, externalRouter = null) => {
             return;
         }
         res.json(session);
+    });
+
+    router.get('/app/state', async (req, res) => {
+        const { state } = app.state;
+        if (state === null) {
+            sendNotFound(res);
+            return;
+        }
+        res.json(state);
     });
 
     return router;
