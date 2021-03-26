@@ -26,6 +26,7 @@ class Application extends EventEmitter {
                     'define',
                     'interact',
                     'reset',
+                    'resetInteractions',
                     'restart',
                     'kill',
                 ].indexOf(command) !== -1,
@@ -146,7 +147,7 @@ class Application extends EventEmitter {
     }
 
     async reset() {
-        await this.resetInteractions();
+        await this.resetSessionInteractions();
         await this.resetSession();
         await this.uncue();
 
@@ -206,10 +207,29 @@ class Application extends EventEmitter {
         this.outputs = this.outputs.filter((it) => it !== output);
     }
 
-    async resetInteractions() {
+    async resetInteractions(...args) {
+        const ids = args || [];
+
+        this.resetInteractidonsByIds(ids);
+
+        await this.sendUninteractionsToOutputs(ids);
+    }
+
+    async resetSessionInteractions() {
         await this.store.deleteItems('interactions', {
             sessionId: this.session.id,
         });
+    }
+
+    async resetInteractidonsByIds(ids) {
+        return Promise.all(
+            ids.map((id) =>
+                this.store.deleteItems('interactions', {
+                    sessionId: this.session.id,
+                    externalId: id,
+                }),
+            ),
+        );
     }
 
     getInteractions() {
@@ -580,6 +600,10 @@ class Application extends EventEmitter {
         return data;
     }
 
+    /**
+     * Call inputs and outputs
+     */
+
     initInputs() {
         this.debug('Init inputs...');
         return Promise.all(
@@ -651,6 +675,28 @@ class Application extends EventEmitter {
             this.outputs.map((it) =>
                 typeof it.interaction !== 'undefined'
                     ? it.interaction(interaction)
+                    : Promise.resolve(),
+            ),
+        );
+    }
+
+    sendUninteractionToOutputs(interactionId) {
+        this.debug('Send interact to outputs: %O %s', interactionId);
+        return Promise.all(
+            this.outputs.map((it) =>
+                typeof it.uninteraction !== 'undefined'
+                    ? it.uninteraction(interactionId)
+                    : Promise.resolve(),
+            ),
+        );
+    }
+
+    sendUninteractionsToOutputs(interactionIds) {
+        this.debug('Send uninteractions to outputs: %O', interactionIds);
+        return Promise.all(
+            this.outputs.map((it) =>
+                typeof it.uninteractions !== 'undefined'
+                    ? it.uninteractions(interactionIds)
                     : Promise.resolve(),
             ),
         );

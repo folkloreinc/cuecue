@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { isArray } from 'lodash';
+import { Parser, transforms } from 'json2csv';
 
 const createApi = (app, input, externalRouter = null) => {
     const router = externalRouter === null ? new Router() : externalRouter;
@@ -11,6 +13,14 @@ const createApi = (app, input, externalRouter = null) => {
     };
 
     const getUserId = (req) => req.header('X-User-Id') || null;
+
+    const downloadCSV = (res, fileName, data) => {
+        const json2csv = new Parser({ transforms: [transforms.flatten('.')] });
+        const csv = json2csv.parse(data);
+        res.header('Content-Type', 'text/csv');
+        res.attachment(fileName);
+        return res.send(csv);
+    };
 
     router.get('/', async (req, res) => {
         res.json({ message: 'Welcome to CueCue' });
@@ -145,6 +155,48 @@ const createApi = (app, input, externalRouter = null) => {
             return;
         }
         res.json(state);
+    });
+
+    router.get('/export/sessions.:format', async (req, res) => {
+        const format = req.params.format || null;
+        const items = await app.store.getItems('sessions', {}, true);
+        if (items === null || !isArray(items)) {
+            sendNotFound(res);
+            return;
+        }
+        if (format === 'csv') {
+            downloadCSV(res, 'sessions.csv', items);
+            return;
+        }
+        res.json(items);
+    });
+
+    router.get('/export/interactions.:format', async (req, res) => {
+        const format = req.params.format || null;
+        const items = await app.store.getItems('interactions', {}, true);
+        if (items === null || !isArray(items)) {
+            sendNotFound(res);
+            return;
+        }
+        if (format === 'csv') {
+            downloadCSV(res, 'interactions.csv', items);
+            return;
+        }
+        res.json(items);
+    });
+
+    router.get('/export/cues.:format', async (req, res) => {
+        const format = req.params.format || null;
+        const items = await app.store.getItems('cues', {}, true);
+        if (items === null || !isArray(items)) {
+            sendNotFound(res);
+            return;
+        }
+        if (format === 'csv') {
+            downloadCSV(res, 'cues.csv', items);
+            return;
+        }
+        res.json(items);
     });
 
     return router;

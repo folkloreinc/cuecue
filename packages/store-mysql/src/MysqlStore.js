@@ -84,7 +84,7 @@ class MysqlStore extends EventEmitter {
         return this.state.is('disconnected');
     }
 
-    findItem(type, externalId = null, internalId = null) {
+    findItem(type, externalId = null, internalId = null, withDeleted = false) {
         return new Promise((resolve, reject) => {
             const idParams = isObject(externalId)
                 ? externalId
@@ -94,7 +94,9 @@ class MysqlStore extends EventEmitter {
                   };
             const { where, values } = getParams(idParams);
             this.client.query(
-                `SELECT * FROM ${type} WHERE ${where} AND ISNULL(deleted_at) LIMIT 1`,
+                `SELECT * FROM ${type} WHERE ${where} ${
+                    withDeleted ? '' : 'AND ISNULL(deleted_at)'
+                } LIMIT 1`,
                 values,
                 (error, results) => {
                     if (error) {
@@ -177,11 +179,13 @@ class MysqlStore extends EventEmitter {
         });
     }
 
-    getItems(type, params = {}) {
+    getItems(type, params = {}, withDeleted = false) {
         return new Promise((resolve, reject) => {
             const { where, values } = getParams(params);
+            const link = values.length > 0 ? `AND` : `WHERE`;
+            const deleted = withDeleted ? '' : `${link} ISNULL(deleted_at)`;
             this.client.query(
-                `SELECT * FROM ${type} WHERE ${where} AND ISNULL(deleted_at)`,
+                `SELECT * FROM ${type} ${values.length > 0 ? `WHERE ${where}` : ''} ${deleted}`,
                 values,
                 (error, results) => {
                     if (error) {

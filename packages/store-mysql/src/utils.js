@@ -16,7 +16,7 @@ export const getIdFromParams = (params) =>
         return acc;
     }, {});
 
-export const getWhereFromParams = (params, operator = 'AND') =>
+export const getWhereFromParams = (params = {}, operator = 'AND') =>
     Object.keys(params)
         .reduce((items, key) => [...items, `${key} = ?`], [])
         .join(` ${operator} `);

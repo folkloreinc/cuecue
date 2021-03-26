@@ -14,24 +14,39 @@
             "stateful": true
         },
         {
-            "id": "question",
+            "id": "question-players",
             "label": "Question",
             "type": "question",
             "stateful": true,
-            "interactive": true
+            "interactive": true,
+            "data": {
+                "group": "players",
+                "question": "Qui est le meilleur joueur de la LNI?",
+                "questionId": "b-12"
+            }
         },
         {
-            "id": "vote",
+            "id": "vote-players",
             "label": "Vote",
             "type": "vote",
             "stateful": true,
-            "interactive": true
+            "interactive": true,
+            "data": {
+                "group": "players",
+                "question": "Qui est le meilleur joueur de la LNI?",
+                "questionId": "b-12"
+            }
         },
         {
-            "id": "winner",
+            "id": "winner-players",
             "label": "Gagnant",
             "type": "winner",
-            "stateful": true
+            "stateful": true,
+            "data": {
+                "group": "players",
+                "question": "Qui est le meilleur joueur de la LNI?",
+                "questionId": "b-12"
+            }
         }
     ]
 }

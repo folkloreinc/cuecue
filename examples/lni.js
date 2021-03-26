@@ -33,7 +33,7 @@ router.post('/text', async (req, res) => {
         const { type, data = {} } = cue || {};
         const { answers = [], questionId = null } = data || {};
 
-        // Remove uuid to make the replys one by phone number + fix front in case
+        // Add/Remove uuid to make the replys unique by phone number
         const uniqueId = `${questionId || 'my-question-id'}-${from}-${uuid()}`;
 
         debug('TEXT MESSAGE %s %s %s', body, from, uniqueId);

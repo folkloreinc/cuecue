@@ -129,7 +129,7 @@ class Server extends EventEmitter {
                 this.session.close();
             }
         } catch (e) {
-            console.log(e); // eslint-disable-line
+            this.debug('onDestroy error %O', e);
         }
 
         this.app = null;

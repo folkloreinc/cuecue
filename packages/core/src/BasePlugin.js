@@ -121,8 +121,13 @@ class BasePlugin extends EventEmitter {
     }
 
     onInvalidTransition(transition, from, to) {
-        console.log(this.state.state);
-        this.debug('ERROR: Invalid base transition: %s from: %s to: %s', transition, from, to);
+        this.debug(
+            'ERROR: Invalid base transition: %s from: %s to: %s state: %s',
+            transition,
+            from,
+            to,
+            this.state.state,
+        );
     }
 }
 

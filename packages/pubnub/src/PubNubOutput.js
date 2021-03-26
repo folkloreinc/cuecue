@@ -18,12 +18,20 @@ class PubNubOutput extends Base {
         this.command('cues', cues);
     }
 
+    interact(data, interactionId = null) {
+        this.command('interact', data, interactionId);
+    }
+
     interaction(interaction) {
         this.command('interaction', interaction);
     }
 
-    interact(data, interactionId = null) {
-        this.command('interact', data, interactionId);
+    uninteraction(interactionId) {
+        this.command('uninteract', interactionId);
+    }
+
+    uninteractions(interactionIds) {
+        this.command('uninteractions', interactionIds);
     }
 
     async command(command, ...args) {
