@@ -336,7 +336,9 @@ class Application extends EventEmitter {
 
         this.destroyOutputs();
 
-        await this.store.destroy();
+        if (this.store !== null && typeof this.store.destroy !== 'undefined') {
+            await this.store.destroy();
+        }
 
         this.event = null;
         this.inputs = [];
