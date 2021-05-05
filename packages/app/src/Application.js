@@ -9,14 +9,12 @@ import MemoryStore from './MemoryStore';
 class Application extends EventEmitter {
     constructor(definition, opts = {}) {
         super();
-        this.definition = {
-            getHandle: (id) => `${id}_${dayjs().format('YYYY_MM_DD')}_${Date.now().toString(36)}`,
-            ...definition,
-        };
+        this.definition = definition;
 
         this.options = {
             store: new MemoryStore(),
             debugFunction: createDebug('cuecue:app'),
+            getHandle: (id) => `${id}_${dayjs().format('YYYY_MM_DD')}_${Date.now().toString(36)}`,
             validateCommand: (command) =>
                 [
                     'start',
@@ -39,6 +37,7 @@ class Application extends EventEmitter {
         this.store = store;
         this.session = null;
         this.statefulCue = null;
+        this.cueDurationInterval = null;
         this.interactions = [];
         this.inputs = [];
         this.outputs = [];
@@ -52,6 +51,7 @@ class Application extends EventEmitter {
         this.onUncue = this.onUncue.bind(this);
         this.onEnd = this.onEnd.bind(this);
         this.onCue = this.onCue.bind(this);
+        this.onCued = this.onCued.bind(this);
         this.onStop = this.onStop.bind(this);
         this.onStopped = this.onStopped.bind(this);
         this.onInputCommand = this.onInputCommand.bind(this);
@@ -77,6 +77,7 @@ class Application extends EventEmitter {
                 onBeforeStart: this.onStart,
                 onAfterStart: this.onIdle,
                 onBeforeCue: this.onCue,
+                onAfterCue: this.onCued,
                 onBeforeUncue: this.onUncue,
                 onBeforeEnd: this.onEnd,
                 onBeforeStop: this.onStop,
@@ -398,6 +399,7 @@ class Application extends EventEmitter {
     }
 
     async onUncue() {
+        this.stopCueDurationInterval();
         this.statefulCue = null;
 
         await this.setSessionCue(null);
@@ -432,9 +434,43 @@ class Application extends EventEmitter {
         return true;
     }
 
+    async onCued(state, cueId) {
+        const cues = await this.getCues();
+        const cue = cues.find(({ id }) => id === cueId) || null;
+
+        if (cue === null) {
+            this.debug('Cannot find cue %s', cueId);
+            return false;
+        }
+
+        const { duration = null } = cue;
+        if (duration !== null) {
+            this.startCueDurationInterval(cue);
+        }
+    }
+
+    async onCueDurationEnd(cue) {
+        this.debug('Cue %s duration is ended', cue.id);
+        const { after_duration: afterDuration = null } = cue;
+        const { cues = [] } = this.definition;
+        switch (afterDuration) {
+            case 'next':
+                const cueIndex = cues.findIndex(it => it.id === cue.id);
+                const nextCue = cueIndex !== -1 && cueIndex < (cues.length - 1) ? cues[cueIndex + 1] : null;
+                if (nextCue !== null) {
+                    this.cue(nextCue.id);
+                }
+                break;
+            default:
+                this.uncue();
+                break;
+        }
+    }
+
     async onStop() {
         this.emit('stop');
 
+        this.stopCueDurationInterval();
         this.statefulCue = null;
 
         this.sendCommandToOutputs('stop');
@@ -452,6 +488,7 @@ class Application extends EventEmitter {
     async onEnd() {
         await this.endSession();
 
+        this.stopCueDurationInterval();
         this.session = null;
         this.statefulCue = null;
 
@@ -515,8 +552,32 @@ class Application extends EventEmitter {
         return interaction;
     }
 
+    startCueDurationInterval(cue) {
+        const { duration = null } = cue;
+        const startTime = new Date().getTime();
+        this.debug('Starting interval for %i for cue %s...', duration, cue.id);
+        this.cueDurationInterval = setInterval(() => {
+            const currentTime = new Date().getTime();
+            const currentDuration = Math.floor((currentTime - startTime) / 1000);
+            if (currentDuration >= duration) {
+                clearInterval(this.cueDurationInterval);
+                this.cueDurationInterval = null;
+                this.onCueDurationEnd(cue);
+            }
+        }, 10);
+    }
+
+    stopCueDurationInterval() {
+        if (this.cueDurationInterval !== null) {
+            this.debug('Stopping interval for cue...',);
+            clearInterval(this.cueDurationInterval);
+            this.cueDurationInterval = null;
+        }
+    }
+
     async ensureSession() {
-        const { id: definitionId, getHandle, cues = [] } = this.definition;
+        const { getHandle } = this.options;
+        const { id: definitionId, cues = [] } = this.definition;
 
         this.debug('Getting started session...');
 
