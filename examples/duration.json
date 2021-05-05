@@ -1,0 +1,22 @@
+{
+    "id": "usine",
+    "cues": [
+        {
+            "id": "cue1",
+            "stateful": true,
+            "duration": 10,
+            "after_duration": "next"
+        },
+        {
+            "id": "cue2",
+            "stateful": true,
+            "duration": 20,
+            "after_duration": "next"
+        },
+        {
+            "id": "cue3",
+            "stateful": true,
+            "duration": 20
+        }
+    ]
+}
