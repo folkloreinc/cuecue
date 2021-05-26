@@ -41,28 +41,28 @@ class OscOutput extends Base {
             this.debug('command canceled: %s %o', command, args);
             return Promise.resolve();
         }
-
         const values = isArray(value) ? value : [value];
-
         return Promise.all(values.map((val) => {
             const { command: finalCommand = command, args: finalArgs = args } = val || {};
-
             this.debug('command: %s %o', finalCommand, finalArgs);
-
-            return new Promise((resolve, reject) => {
-                const path = finalCommand.replace(/^\/?/, '/');
-                const sendArgs = finalArgs.filter((it) => it !== null && !isObject(it) && !isArray(it));
-                this.osc.send(path, ...sendArgs, (err) => {
-                    if (err) {
-                        this.debug('send error: %s %o', path, sendArgs);
-                        reject(err);
-                        return;
-                    }
-                    this.debug('send success: %s %o', path, sendArgs);
-                    resolve();
-                });
-            });
+            const path = finalCommand.replace(/^\/?/, '/');
+            const sendArgs = finalArgs.filter((it) => it !== null && !isObject(it) && !isArray(it));
+            return this.send(path, ...sendArgs);
         }));
+    }
+
+    async send(path, ...args) {
+        return new Promise((resolve, reject) => {
+            this.osc.send(path, ...args, (err) => {
+                if (err) {
+                    this.debug('send error: %s %o', path, args);
+                    reject(err);
+                    return;
+                }
+                this.debug('send success: %s %o', path, args);
+                resolve();
+            });
+        });
     }
 }
 
