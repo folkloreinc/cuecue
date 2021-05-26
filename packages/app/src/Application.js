@@ -447,6 +447,8 @@ class Application extends EventEmitter {
         if (duration !== null) {
             this.startCueDurationInterval(cue);
         }
+
+        return true;
     }
 
     async onCueDurationEnd(cue) {
@@ -454,13 +456,14 @@ class Application extends EventEmitter {
         const { after_duration: afterDuration = null } = cue;
         const { cues = [] } = this.definition;
         switch (afterDuration) {
-            case 'next':
+            case 'next': {
                 const cueIndex = cues.findIndex(it => it.id === cue.id);
                 const nextCue = cueIndex !== -1 && cueIndex < (cues.length - 1) ? cues[cueIndex + 1] : null;
                 if (nextCue !== null) {
                     this.cue(nextCue.id);
                 }
                 break;
+            }
             default:
                 this.uncue();
                 break;
@@ -536,6 +539,11 @@ class Application extends EventEmitter {
             id: interactionId,
             sessionId: this.session.id,
         };
+
+        const { id: cueId, interaction: cueHasInteraction = false } = this.statefulCue || {};
+        if (cueHasInteraction) {
+            interactionIdentifier.cueId = cueId;
+        }
 
         let interaction = await this.store.findItem('interactions', interactionIdentifier);
         if (interaction !== null) {
