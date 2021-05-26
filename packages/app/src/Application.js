@@ -195,6 +195,15 @@ class Application extends EventEmitter {
         input.on('command', this.onInputCommand);
     }
 
+    getCurrentCue() {
+        return this.statefulCue;
+    }
+
+    getCurrentCueId() {
+        const { id = null } = this.statefulCue || {};
+        return id;
+    }
+
     removeInput(input) {
         input.off('command', this.onInputCommand);
         this.inputs = this.inputs.filter((it) => it !== input);
