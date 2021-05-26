@@ -36,6 +36,12 @@ class OscOutput extends Base {
         const { transformCommand = null } = this.options;
         const value =
             transformCommand !== null ? await transformCommand(command, args) : { command, args };
+
+        if (value === false) {
+            this.debug('command canceled: %s %o', command, args);
+            return Promise.resolve();
+        }
+
         const { command: finalCommand = command, args: finalArgs = args } = value || {};
 
         this.debug('command: %s %o', finalCommand, finalArgs);

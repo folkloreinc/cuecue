@@ -35,13 +35,18 @@ class PubNubOutput extends Base {
     }
 
     async command(command, ...args) {
-        this.debug('command: %s message: %o', command, args);
-
         const { channel, transformCommand = null, transformMessage = null } = this.options;
-        const { command: finalCommand = command, args: finalArgs = args } = (transformCommand !==
-        null
-            ? await transformCommand(command, args)
-            : null) || { command, args };
+        const value = transformCommand !== null
+            ? await transformCommand(command, args) : { command, args };
+
+        if (value === false) {
+            this.debug('command canceled: %s %o', command, args);
+            return Promise.resolve();
+        }
+
+        const { command: finalCommand = command, args: finalArgs = args } = value || {};
+
+        this.debug('command: %s message: %o', finalCommand, finalArgs);
 
         const message = {
             command: finalCommand,
