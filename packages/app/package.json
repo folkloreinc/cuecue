@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/app",
-    "version": "0.0.18",
+    "version": "0.0.19",
     "description": "",
     "keywords": [
         "javascript"
@@ -38,7 +38,7 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
-        "@cuecue/core": "^0.0.18",
+        "@cuecue/core": "^0.0.19",
         "commander": "^7.0.0",
         "dayjs": "^1.10.4",
         "debug": "^4.3.1",
