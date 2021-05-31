@@ -631,8 +631,8 @@ class Application extends EventEmitter {
     }
 
     async resetSession() {
-        const { id, handle } = this.session;
-        this.debug('Resetting session "%s"...', handle);
+        const { id } = this.session;
+        this.debug('Resetting session "%s"...', id);
         this.session = await this.store.updateItem('sessions', id, {
             started: true,
             ended: false,
@@ -641,8 +641,8 @@ class Application extends EventEmitter {
     }
 
     async startSession() {
-        const { id, handle } = this.session;
-        this.debug('Starting session "%s"...', handle);
+        const { id } = this.session;
+        this.debug('Starting session "%s"...', id);
         this.session = await this.store.updateItem('sessions', id, {
             started: true,
             ended: false,
@@ -650,8 +650,8 @@ class Application extends EventEmitter {
     }
 
     async endSession() {
-        const { id, handle } = this.session;
-        this.debug('Ending session "%s"...', handle);
+        const { id } = this.session;
+        this.debug('Ending session "%s"...', id);
         this.session = await this.store.updateItem('sessions', id, {
             started: false,
             ended: true,
@@ -660,8 +660,8 @@ class Application extends EventEmitter {
     }
 
     async setSessionCue(cue, sessionData = null) {
-        const { id, handle } = this.session;
-        this.debug('Setting session "%s" %s, cue... %o', handle, id, cue);
+        const { id } = this.session;
+        this.debug('Setting session "%s", cue... %o', id, cue);
         this.session = await this.store.updateItem('sessions', id, {
             cue: cue !== null ? cue.id : null,
             data: sessionData,
