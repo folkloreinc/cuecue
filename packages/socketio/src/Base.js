@@ -29,7 +29,7 @@ class Base extends BasePlugin {
     async connectSocket() {
         const { host, namespace } = this.options;
         this.socket = io(
-            namespace !== null ? host.replace(/\/$/, `/${namespace.replace(/^\//, '')}`) : host,
+            namespace !== null ? host.replace(/\/?$/, `/${namespace.replace(/^\//, '')}`) : host,
         );
         this.socket.on('connect', this.onConnect);
         return Promise.resolve();
