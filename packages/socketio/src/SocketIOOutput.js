@@ -62,6 +62,7 @@ class SocketIOOutput extends Base {
     }
 
     async send(...args) {
+        this.debug('send: %o', args);
         this.socket.send(...args);
         return Promise.resolve();
     }
