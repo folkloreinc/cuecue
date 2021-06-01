@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/socketio",
-    "version": "0.0.21",
+    "version": "0.0.22",
     "description": "",
     "keywords": [
         "javascript"
@@ -38,7 +38,7 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
-        "@cuecue/core": "^0.0.21",
+        "@cuecue/core": "^0.0.22",
         "debug": "^4.3.1",
         "lodash": "^4.17.20",
         "socket.io": "^4.1.2",
