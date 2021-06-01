@@ -8,7 +8,7 @@ class SocketIOInput extends Base {
             namespace: process.env.SOCKETIO_INPUT_NAMESPACE || null,
             ...opts,
         });
-        this.onCommand = this.onCommand.bind(this);
+        this.onMessage = this.onMessage.bind(this);
         this.commands = commands;
         this.debug = createDebug('cuecue:input:socketio');
     }

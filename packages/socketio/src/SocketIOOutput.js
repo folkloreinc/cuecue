@@ -9,7 +9,6 @@ class SocketIOOutput extends Base {
         });
 
         this.socket = null;
-        this.onSocket = this.onSocket.bind(this);
 
         this.debug = createDebug('cuecue:output:socketio');
     }
