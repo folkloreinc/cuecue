@@ -59,11 +59,11 @@ class SocketIOOutput extends Base {
 
         const payload = transformMessage !== null ? await transformMessage(message) : message;
 
-        return this.emit('command', payload);
+        return this.send(payload);
     }
 
-    async emit(...args) {
-        this.socket.emit(...args);
+    async send(...args) {
+        this.socket.send(...args);
         return Promise.resolve();
     }
 }

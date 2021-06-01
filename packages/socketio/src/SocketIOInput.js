@@ -20,15 +20,15 @@ class SocketIOInput extends Base {
 
     async onInit() {
         await super.onInit();
-        this.socket.on('command', this.onCommand);
+        this.socket.on('message', this.onMessage);
     }
 
     async onDestroy() {
-        this.socket.off('command', this.onCommand);
+        this.socket.off('message', this.onMessage);
         await super.onDestroy();
     }
 
-    async onCommand(message) {
+    async onMessage(message) {
         const { transformMessage = null, transformCommand = null } = this.options;
 
         const { command = null, args = [] } =
