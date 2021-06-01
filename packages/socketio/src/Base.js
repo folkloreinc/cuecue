@@ -26,23 +26,15 @@ class Base extends BasePlugin {
 
     async connectSocket() {
         const { host, namespace } = this.options;
-        return new Promise((resolve) => {
-            this.socket = io(
-                namespace !== null ? host.replace(/\/$/, `/${namespace.replace(/^\//, '')}`) : host,
-            );
-            this.socket.once('connect', () => {
-                resolve();
-            });
-        });
+        this.socket = io(
+            namespace !== null ? host.replace(/\/$/, `/${namespace.replace(/^\//, '')}`) : host,
+        );
+        return Promise.resolve();
     }
 
     async closeSocket() {
-        return new Promise((resolve) => {
-            this.socket.once('disconnect', () => {
-                resolve();
-            });
-            this.socket.close();
-        });
+        this.socket.close();
+        return Promise.resolve();
     }
 }
 
