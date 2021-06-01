@@ -14,7 +14,6 @@ class Base extends BasePlugin {
         this.debug = createDebug('cuecue:socketio');
     }
 
-
     async onInit() {
         await super.onInit();
         await this.connectSocket();
@@ -26,9 +25,11 @@ class Base extends BasePlugin {
     }
 
     async connectSocket() {
-        const { host } = this.options;
+        const { host, namespace } = this.options;
         return new Promise((resolve) => {
-            this.socket = io(host);
+            this.socket = io(
+                namespace !== null ? host.replace(/\/$/, `/${namespace.replace(/^\//, '')}`) : host,
+            );
             this.socket.once('connect', () => {
                 resolve();
             });
