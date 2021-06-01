@@ -10,6 +10,8 @@ class Base extends BasePlugin {
             ...opts,
         });
 
+        this.onConnect = this.onConnect.bind(this);
+
         this.commands = commands;
         this.debug = createDebug('cuecue:socketio');
     }
@@ -29,12 +31,19 @@ class Base extends BasePlugin {
         this.socket = io(
             namespace !== null ? host.replace(/\/$/, `/${namespace.replace(/^\//, '')}`) : host,
         );
+        this.socket.on('connect', this.onConnect);
         return Promise.resolve();
     }
 
     async closeSocket() {
+        this.socket.off('connect', this.onConnect);
         this.socket.close();
         return Promise.resolve();
+    }
+
+    onConnect() {
+        const { host, namespace } = this.options;
+        this.debug('Connected on %s/%s', host, namespace || '');
     }
 }
 
