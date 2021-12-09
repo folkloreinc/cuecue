@@ -80,13 +80,13 @@ class ServerOutput extends BaseServer {
         if (namespace !== null) {
             return this.sendToNamespace(namespace, ...args);
         }
-        this.io.send(...args);
+        this.namespace.send(...args);
         return Promise.resolve();
     }
 
     async sendToNamespace(namespace, ...args) {
         this.debug('send: %o', args);
-        this.io.of(namespace).send(...args);
+        this.namespace.of(namespace).send(...args);
         return Promise.resolve();
     }
 }

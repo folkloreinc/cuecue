@@ -12,6 +12,7 @@ class BaseServer extends BasePlugin {
         });
 
         this.io = null;
+        this.namespace - null;
         this.onConnection = this.onConnection.bind(this);
 
         this.commands = commands;
@@ -29,11 +30,12 @@ class BaseServer extends BasePlugin {
     }
 
     async createServer() {
-        const { server, port, cors } = this.options;
+        const { server, port, cors, namespace } = this.options;
         const ioOptions = { cors };
         this.io = io(ioOptions);
 
-        this.io.on('connection', this.onConnection);
+        this.namespace = namespace !== null ? this.io.of(namespace) : this.io;
+        this.namespace.on('connection', this.onConnection);
 
         this.io.listen(server || port);
 
@@ -41,7 +43,7 @@ class BaseServer extends BasePlugin {
     }
 
     async closeServer() {
-        this.io.off('connection', this.onConnection);
+        this.namespace.off('connection', this.onConnection);
         return new Promise((resolve) => {
             this.io.close(() => {
                 resolve();

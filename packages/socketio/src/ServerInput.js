@@ -19,27 +19,8 @@ class ServerInput extends BaseServer {
         return this;
     }
 
-    async onInit() {
-        await super.onInit();
-        const { namespace } = this.namespace;
-        if (namespace !== null) {
-            this.io.of(namespace).on('connection', this.onSocketConnection);
-        } else {
-            this.io.on('connection', this.onSocketConnection);
-        }
-    }
-
-    async onDestroy() {
-        const { namespace } = this.namespace;
-        if (namespace !== null) {
-            this.io.of(namespace).off('connection', this.onSocketConnection);
-        } else {
-            this.io.off('connection', this.onSocketConnection);
-        }
-        await super.onDestroy();
-    }
-
-    async onSocketConnection(socket) {
+    async onConnection(socket) {
+        await super.onConnection(socket);
         socket.on('message', this.onMessage);
     }
 
