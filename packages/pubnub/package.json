@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/pubnub",
-    "version": "0.0.32",
+    "version": "0.0.33",
     "description": "",
     "keywords": [
         "javascript"
@@ -40,7 +40,7 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
-        "@cuecue/core": "^0.0.32",
+        "@cuecue/core": "^0.0.33",
         "debug": "^4.3.1",
         "lodash": "^4.17.20",
         "pubnub": "^4.29.11",
