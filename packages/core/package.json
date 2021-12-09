@@ -29,12 +29,14 @@
         }
     ],
     "license": "ISC",
-    "main": "lib/index.js",
+    "main": "dist/index.js",
     "files": [
-        "lib"
+        "dist"
     ],
     "scripts": {
-        "prepare": "../../scripts/prepare-package.sh"
+        "clean": "rm -rf dist",
+        "build": "rollup --config ../../rollup.config.js",
+        "prepare": "npm run clean && npm run build"
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",

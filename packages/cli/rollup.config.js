@@ -1,14 +1,14 @@
-import { createConfig } from '../../rollup.config';
+import config, { plugins } from '../../rollup.config';
 
 export default [
-    createConfig({
-        file: 'index.js',
-        format: 'cjs',
-    }),
-    createConfig({
-        input: 'src/bin/cuecue.js',
-        output: 'bin/cuecue.js',
-        banner: '#!/usr/bin/env node',
-        format: 'node',
-    })
+    config,
+    {
+        input: 'src/cli.js',
+        output: {
+            file: 'dist/cli.js',
+            format: 'cjs',
+            banner: '#!/usr/bin/env node',
+        },
+        plugins,
+    },
 ];

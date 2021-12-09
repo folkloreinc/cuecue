@@ -13,10 +13,5 @@
         "bootstrap": {
             "hoist": true
         }
-    },
-    "bootstrap": {
-        "npmClientArgs": [
-            "--no-package-lock"
-        ]
     }
 }

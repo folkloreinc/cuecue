@@ -33,7 +33,7 @@ class OscOutput extends Base {
     }
 
     async command(command, ...args) {
-        const { transformCommand = null } = this.options;
+        const { transformCommand = null, acceptCommand = null } = this.options;
         const value =
             transformCommand !== null ? await transformCommand(command, args) : { command, args };
 
@@ -41,9 +41,16 @@ class OscOutput extends Base {
             this.debug('command canceled: %s %o', command, args);
             return Promise.resolve();
         }
+
         const values = isArray(value) ? value : [value];
         return Promise.all(values.map((val) => {
             const { command: finalCommand = command, args: finalArgs = args } = val || {};
+
+            if (acceptCommand !== null && !acceptCommand(finalCommand, finalArgs)) {
+                this.debug('command refused: %s %o', finalCommand, finalArgs);
+                return Promise.resolve();
+            }
+
             this.debug('command: %s %o', finalCommand, finalArgs);
             const path = finalCommand.replace(/^\/?/, '/');
             const sendArgs = finalArgs.filter((it) => it !== null && !isObject(it) && !isArray(it));

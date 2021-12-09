@@ -42,9 +42,6 @@ node_modules
 
 .env
 .eslintcache
-/*/*/es
-/*/*/lib
-/*/*/assets
-/*/*/scss
+/*/*/dist
 /output
 /notes

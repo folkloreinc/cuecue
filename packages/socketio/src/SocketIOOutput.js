@@ -38,7 +38,7 @@ class SocketIOOutput extends Base {
     }
 
     async command(command, ...args) {
-        const { transformCommand = null, transformMessage = null } = this.options;
+        const { transformCommand = null, transformMessage = null, acceptCommand = null } = this.options;
         const value =
             transformCommand !== null ? await transformCommand(command, args) : { command, args };
 
@@ -48,6 +48,11 @@ class SocketIOOutput extends Base {
         }
 
         const { command: finalCommand = command, args: finalArgs = args } = value || {};
+
+        if (acceptCommand !== null && !acceptCommand(finalCommand, finalArgs)) {
+            this.debug('command refused: %s %o', finalCommand, finalArgs);
+            return Promise.resolve();
+        }
 
         this.debug('command: %s message: %o', finalCommand, finalArgs);
 

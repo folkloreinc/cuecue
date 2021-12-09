@@ -29,15 +29,17 @@
         }
     ],
     "license": "ISC",
-    "main": "lib/index.js",
+    "main": "dist/index.js",
     "files": [
-        "lib"
+        "dist"
     ],
     "scripts": {
-        "prepare": "../../scripts/prepare-package.sh",
         "migrate:up": "db-migrate up --migrations-dir=./migrations --config=./migrations/config.json -e prod --dotenvCustomPath '../../.env'",
         "migrate:down": "db-migrate down --migrations-dir=./migrations --config=./migrations/config.json -e prod --dotenvCustomPath '../../.env'",
-        "migrate:reset": "db-migrate reset --migrations-dir=./migrations --config=./migrations/config.json -e prod --dotenvCustomPath '../../.env'"
+        "migrate:reset": "db-migrate reset --migrations-dir=./migrations --config=./migrations/config.json -e prod --dotenvCustomPath '../../.env'",
+        "clean": "rm -rf dist",
+        "build": "rollup --config ../../rollup.config.js",
+        "prepare": "npm run clean && npm run build"
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
