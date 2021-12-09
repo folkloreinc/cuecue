@@ -44,6 +44,14 @@
                 "import/no-dynamic-require": 0,
                 "no-console": 0
             }
+        },
+        {
+            "files": [
+                "examples/**/*.js"
+            ],
+            "rules": {
+                "import/no-relative-packages": 0
+            }
         }
     ]
 }

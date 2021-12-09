@@ -40,7 +40,7 @@
         "clean": "rm -rf dist",
         "build": "rollup --config ./rollup.config.js",
         "prepare": "npm run clean && npm run build",
-        "cli": "../../node_modules/.bin/babel-node ./src/cli.js"
+        "cli": "../../node_modules/.bin/babel-node  -i '[]' ./src/cli.js"
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
