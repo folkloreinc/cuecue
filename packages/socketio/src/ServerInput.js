@@ -1,16 +1,17 @@
 import createDebug from 'debug';
 import isArray from 'lodash/isArray';
-import Base from './Base';
+import BaseServer from './BaseServer';
 
-class SocketIOInput extends Base {
+class ServerInput extends BaseServer {
     constructor({ commands = null, ...opts } = {}) {
         super({
             namespace: process.env.SOCKETIO_INPUT_NAMESPACE || null,
             ...opts,
         });
+        this.onSocketConnection = this.onSocketConnection.bind(this);
         this.onMessage = this.onMessage.bind(this);
         this.commands = commands;
-        this.debug = createDebug('cuecue:input:socketio');
+        this.debug = createDebug('cuecue:input:socketio-server');
     }
 
     setInputCommands(commands) {
@@ -20,12 +21,26 @@ class SocketIOInput extends Base {
 
     async onInit() {
         await super.onInit();
-        this.socket.on('message', this.onMessage);
+        const { namespace } = this.namespace;
+        if (namespace !== null) {
+            this.io.of(namespace).on('connection', this.onSocketConnection);
+        } else {
+            this.io.on('connection', this.onSocketConnection);
+        }
     }
 
     async onDestroy() {
-        this.socket.off('message', this.onMessage);
+        const { namespace } = this.namespace;
+        if (namespace !== null) {
+            this.io.of(namespace).off('connection', this.onSocketConnection);
+        } else {
+            this.io.off('connection', this.onSocketConnection);
+        }
         await super.onDestroy();
+    }
+
+    async onSocketConnection(socket) {
+        socket.on('message', this.onMessage);
     }
 
     async onMessage(message) {
@@ -45,4 +60,4 @@ class SocketIOInput extends Base {
     }
 }
 
-export default SocketIOInput;
+export default ServerInput;

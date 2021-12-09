@@ -1,7 +1,7 @@
 import createDebug from 'debug';
 import Base from './Base';
 
-class SocketIOOutput extends Base {
+class ServerOutput extends Base {
     constructor(opts = {}) {
         super({
             namespace: process.env.SOCKETIO_OUTPUT_NAMESPACE || null,
@@ -38,7 +38,11 @@ class SocketIOOutput extends Base {
     }
 
     async command(command, ...args) {
-        const { transformCommand = null, transformMessage = null, acceptCommand = null } = this.options;
+        const {
+            transformCommand = null,
+            transformMessage = null,
+            acceptCommand = null,
+        } = this.options;
         const value =
             transformCommand !== null ? await transformCommand(command, args) : { command, args };
 
@@ -47,7 +51,11 @@ class SocketIOOutput extends Base {
             return Promise.resolve();
         }
 
-        const { command: finalCommand = command, args: finalArgs = args } = value || {};
+        const {
+            command: finalCommand = command,
+            args: finalArgs = args,
+            namespace = null,
+        } = value || {};
 
         if (acceptCommand !== null && !acceptCommand(finalCommand, finalArgs)) {
             this.debug('command refused: %s %o', finalCommand, finalArgs);
@@ -63,14 +71,24 @@ class SocketIOOutput extends Base {
 
         const payload = transformMessage !== null ? await transformMessage(message) : message;
 
-        return this.send(payload);
+        return namespace !== null ? this.sendToNamespace(payload) : this.send(payload);
     }
 
     async send(...args) {
         this.debug('send: %o', args);
-        this.socket.send(...args);
+        const { namespace = null } = this.options;
+        if (namespace !== null) {
+            return this.sendToNamespace(namespace, ...args);
+        }
+        this.io.send(...args);
+        return Promise.resolve();
+    }
+
+    async sendToNamespace(namespace, ...args) {
+        this.debug('send: %o', args);
+        this.io.of(namespace).send(...args);
         return Promise.resolve();
     }
 }
 
-export default SocketIOOutput;
+export default ServerOutput;

@@ -1,14 +1,16 @@
-import { BaseOutput } from '@cuecue/core';
 import createDebug from 'debug';
-import axios from 'axios';
+import Base from './Base';
 
-class HttpOutput extends BaseOutput {
+class ClientOutput extends Base {
     constructor(opts = {}) {
         super({
-            method: 'POST',
+            namespace: process.env.SOCKETIO_OUTPUT_NAMESPACE || null,
             ...opts,
         });
-        this.debug = createDebug('cuecue:output:http');
+
+        this.socket = null;
+
+        this.debug = createDebug('cuecue:output:socketio');
     }
 
     cue(cue, extraData = null) {
@@ -36,11 +38,7 @@ class HttpOutput extends BaseOutput {
     }
 
     async command(command, ...args) {
-        const {
-            transformCommand = null,
-            transformMessage = null,
-            acceptCommand = null,
-        } = this.options;
+        const { transformCommand = null, transformMessage = null, acceptCommand = null } = this.options;
         const value =
             transformCommand !== null ? await transformCommand(command, args) : { command, args };
 
@@ -65,18 +63,14 @@ class HttpOutput extends BaseOutput {
 
         const payload = transformMessage !== null ? await transformMessage(message) : message;
 
-        return this.request(payload);
+        return this.send(payload);
     }
 
-    async request(payload) {
-        const { url, method, headers } = this.options;
-        return axios({
-            url,
-            method,
-            headers,
-            data: payload,
-        });
+    async send(...args) {
+        this.debug('send: %o', args);
+        this.socket.send(...args);
+        return Promise.resolve();
     }
 }
 
-export default HttpOutput;
+export default ClientOutput;
