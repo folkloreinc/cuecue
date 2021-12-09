@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/store-mysql",
-    "version": "0.0.29",
+    "version": "0.0.30",
     "description": "",
     "keywords": [
         "javascript"
@@ -43,7 +43,7 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
-        "@cuecue/core": "^0.0.29",
+        "@cuecue/core": "^0.0.30",
         "db-migrate": "^0.11.12",
         "db-migrate-mysql": "^2.1.2",
         "debug": "^4.3.1",
