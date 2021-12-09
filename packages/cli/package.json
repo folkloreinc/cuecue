@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/cli",
-    "version": "0.0.28",
+    "version": "0.0.29",
     "description": "",
     "keywords": [
         "javascript"
@@ -44,8 +44,8 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.12.5",
-        "@cuecue/osc": "^0.0.28",
-        "@cuecue/pubnub": "^0.0.28",
+        "@cuecue/osc": "^0.0.29",
+        "@cuecue/pubnub": "^0.0.29",
         "commander": "^8.3.0",
         "dotenv": "^8.2.0"
     },
