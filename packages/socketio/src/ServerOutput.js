@@ -1,7 +1,7 @@
 import createDebug from 'debug';
-import Base from './Base';
+import BaseServer from './BaseServer';
 
-class ServerOutput extends Base {
+class ServerOutput extends BaseServer {
     constructor(opts = {}) {
         super({
             namespace: process.env.SOCKETIO_OUTPUT_NAMESPACE || null,
