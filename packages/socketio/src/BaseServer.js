@@ -29,8 +29,8 @@ class BaseServer extends BasePlugin {
     }
 
     async createServer() {
-        const { server, port } = this.options;
-        const ioOptions = {};
+        const { server, port, cors } = this.options;
+        const ioOptions = { cors };
         this.io = io(ioOptions);
 
         this.io.on('connection', this.onConnection);
