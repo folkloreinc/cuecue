@@ -24,11 +24,11 @@ class BaseServer extends BasePlugin {
     }
 
     async onDestroy() {
-        await this.closeSocket();
+        await this.closeServer();
         await super.onDestroy();
     }
 
-    async connectSocket() {
+    async createServer() {
         const { server, port } = this.options;
         const ioOptions = {};
         this.io = io(ioOptions);
@@ -40,7 +40,7 @@ class BaseServer extends BasePlugin {
         return Promise.resolve();
     }
 
-    async closeSocket() {
+    async closeServer() {
         this.io.off('connection', this.onConnection);
         return new Promise((resolve) => {
             this.io.close(() => {
