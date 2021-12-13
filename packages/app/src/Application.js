@@ -382,7 +382,9 @@ class Application extends EventEmitter {
 
         this.sendCuesToOutputs(cues);
 
-        this.sendCommandToOutputs('start');
+        this.sendCommandToOutputs('start', {
+            sessionId: this.session.id,
+        });
 
         this.emit('start');
     }
@@ -413,7 +415,9 @@ class Application extends EventEmitter {
 
         await this.setSessionCue(null);
 
-        await this.sendCommandToOutputs('uncue');
+        await this.sendCommandToOutputs('uncue', {
+            sessionId: this.session.id,
+        });
 
         this.emit('uncue');
     }
@@ -466,8 +470,9 @@ class Application extends EventEmitter {
         const { cues = [] } = this.definition;
         switch (afterDuration) {
             case 'next': {
-                const cueIndex = cues.findIndex(it => it.id === cue.id);
-                const nextCue = cueIndex !== -1 && cueIndex < (cues.length - 1) ? cues[cueIndex + 1] : null;
+                const cueIndex = cues.findIndex((it) => it.id === cue.id);
+                const nextCue =
+                    cueIndex !== -1 && cueIndex < cues.length - 1 ? cues[cueIndex + 1] : null;
                 if (nextCue !== null) {
                     this.cue(nextCue.id);
                 }
@@ -485,7 +490,9 @@ class Application extends EventEmitter {
         this.stopCueDurationInterval();
         this.statefulCue = null;
 
-        this.sendCommandToOutputs('stop');
+        this.sendCommandToOutputs('stop', {
+            sessionId: this.session.id,
+        });
 
         await this.stopInputs();
 
@@ -586,7 +593,7 @@ class Application extends EventEmitter {
 
     stopCueDurationInterval() {
         if (this.cueDurationInterval !== null) {
-            this.debug('Stopping interval for cue...',);
+            this.debug('Stopping interval for cue...');
             clearInterval(this.cueDurationInterval);
             this.cueDurationInterval = null;
         }
