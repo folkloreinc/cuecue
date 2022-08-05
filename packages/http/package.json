@@ -43,14 +43,14 @@
         "@cuecue/core": "^0.0.34",
         "axios": "^0.24.0",
         "body-parser": "^1.19.0",
-        "commander": "^7.0.0",
+        "commander": "^9.4.0",
         "cors": "^2.8.5",
         "debug": "^4.3.1",
         "express": "^4.17.1",
         "express-session": "^1.17.1",
         "javascript-state-machine": "^3.1.0",
         "json2csv": "^5.0.6",
-        "lodash": "^4.17.20",
+        "lodash": "^4.17.21",
         "wolfy87-eventemitter": "^5.2.9"
     },
     "publishConfig": {

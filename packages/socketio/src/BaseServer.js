@@ -12,7 +12,7 @@ class BaseServer extends BasePlugin {
         });
 
         this.io = null;
-        this.namespace - null;
+        this.namespace = null;
         this.onConnection = this.onConnection.bind(this);
 
         this.commands = commands;

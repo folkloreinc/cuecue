@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+// import dotenv from 'dotenv';
 
 import Application from '../packages/app/src/Application';
 import OscInput from '../packages/osc/src/OscInput';
@@ -11,7 +11,7 @@ import createApi from '../packages/http/src/createApi';
 
 import definition from './definition.json';
 
-dotenv.config();
+// dotenv.config();
 
 const app = new Application(definition);
 
