@@ -424,8 +424,7 @@ class Application extends EventEmitter {
 
     async onCue(state, cueId, sessionData = null) {
         const cues = await this.getCues();
-        const { id: altCueId = null } = isObject(cueId) ? cueId : {};
-        const cue = cues.find(({ id }) => id === altCueId || cueId) || null;
+        const cue = cues.find(({ id }) => id === cueId) || null;
 
         if (cue === null) {
             this.debug('Cannot find cue %s in %o', cueId, cues);
@@ -450,8 +449,7 @@ class Application extends EventEmitter {
 
     async onCued(state, cueId) {
         const cues = await this.getCues();
-        const { id: altCueId = null } = isObject(cueId) ? cueId : {};
-        const cue = cues.find(({ id }) => id === altCueId || cueId) || null;
+        const cue = cues.find(({ id }) => id === cueId) || null;
 
         if (cue === null) {
             this.debug('Cannot find cue %s in %o', cueId, cues);
