@@ -43,19 +43,23 @@ class OscOutput extends Base {
         }
 
         const values = isArray(value) ? value : [value];
-        return Promise.all(values.map((val) => {
-            const { command: finalCommand = command, args: finalArgs = args } = val || {};
+        return Promise.all(
+            values.map((val) => {
+                const { command: finalCommand = command, args: finalArgs = args } = val || {};
 
-            if (acceptCommand !== null && !acceptCommand(finalCommand, finalArgs)) {
-                this.debug('command refused: %s %o', finalCommand, finalArgs);
-                return Promise.resolve();
-            }
+                if (acceptCommand !== null && !acceptCommand(finalCommand, finalArgs)) {
+                    this.debug('command refused: %s %o', finalCommand, finalArgs);
+                    return Promise.resolve();
+                }
 
-            this.debug('command: %s %o', finalCommand, finalArgs);
-            const path = finalCommand.replace(/^\/?/, '/');
-            const sendArgs = finalArgs.filter((it) => it !== null && !isObject(it) && !isArray(it));
-            return this.send(path, ...sendArgs);
-        }));
+                this.debug('command: %s %o', finalCommand, finalArgs);
+                const path = finalCommand.replace(/^\/?/, '/');
+                const sendArgs = finalArgs.filter(
+                    (it) => it !== null && !isObject(it) && !isArray(it),
+                );
+                return this.send(path, ...sendArgs);
+            }),
+        );
     }
 
     async send(path, ...args) {

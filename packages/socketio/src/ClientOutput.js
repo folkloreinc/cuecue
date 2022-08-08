@@ -38,7 +38,11 @@ class ClientOutput extends Base {
     }
 
     async command(command, ...args) {
-        const { transformCommand = null, transformMessage = null, acceptCommand = null } = this.options;
+        const {
+            transformCommand = null,
+            transformMessage = null,
+            acceptCommand = null,
+        } = this.options;
         const value =
             transformCommand !== null ? await transformCommand(command, args) : { command, args };
 

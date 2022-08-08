@@ -9,7 +9,7 @@ import SocketIOServerInput from '../packages/socketio/src/ServerInput';
 import HttpInput from '../packages/http/src/HttpInput';
 import createApi from '../packages/http/src/createApi';
 
-import definition from './definition.json';
+import definition from './def-passedate.json';
 
 dotenv.config();
 

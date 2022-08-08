@@ -11,7 +11,6 @@ class Base extends BasePlugin {
         });
 
         this.onConnect = this.onConnect.bind(this);
-
         this.commands = commands;
         this.debug = createDebug('cuecue:socketio');
     }
