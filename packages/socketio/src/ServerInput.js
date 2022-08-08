@@ -6,12 +6,16 @@ class ServerInput extends BaseServer {
     constructor({ commands = null, ...opts } = {}) {
         super({
             namespace: process.env.SOCKETIO_INPUT_NAMESPACE || null,
+            cors: {
+                origin: 'http://localhost:5000',
+            },
             ...opts,
         });
-        this.onSocketConnection = this.onSocketConnection.bind(this);
+        this.onConnection = this.onConnection.bind(this);
         this.onMessage = this.onMessage.bind(this);
         this.commands = commands;
         this.debug = createDebug('cuecue:input:socketio-server');
+        this.debug('started on: %O %s', opts, process.env.SOCKETIO_INPUT_NAMESPACE);
     }
 
     setInputCommands(commands) {

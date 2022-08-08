@@ -5,8 +5,9 @@ import io from 'socket.io';
 class BaseServer extends BasePlugin {
     constructor({ commands = null, ...opts } = {}) {
         super({
-            port: process.env.SOCKETIO_PORT || 3000,
+            port: process.env.SOCKETIO_PORT || 5000,
             namespace: process.env.SOCKETIO_NAMESPACE || null,
+            transports: ['websocket', 'polling'],
             server: null,
             ...opts,
         });
@@ -16,7 +17,7 @@ class BaseServer extends BasePlugin {
         this.onConnection = this.onConnection.bind(this);
 
         this.commands = commands;
-        this.debug = createDebug('cuecue:socketio');
+        this.debug = createDebug('cuecue:socketio-server');
     }
 
     async onInit() {
@@ -30,8 +31,8 @@ class BaseServer extends BasePlugin {
     }
 
     async createServer() {
-        const { server, port, cors, namespace } = this.options;
-        const ioOptions = { cors };
+        const { server, port, cors, transports, namespace } = this.options;
+        const ioOptions = { transports, cors };
         this.io = io(ioOptions);
 
         this.namespace = namespace !== null ? this.io.of(namespace) : this.io;

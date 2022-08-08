@@ -7,7 +7,7 @@
         "example:lni": "DEBUG='cuecue:*' npm run babel-node -- --trace-warnings ./examples/lni.js ",
         "example:duration": "DEBUG='cuecue:*' npm run babel-node -- --trace-warnings ./examples/duration.js ",
         "example:treizelunes": "DEBUG='cuecue:*' npm run babel-node -- ./examples/treizelunes.js",
-        "example:scoketio": "DEBUG='cuecue:*' npm run babel-node -- ./examples/socketio.js",
+        "example:socketio": "DEBUG='cuecue:*' npm run babel-node -- ./examples/socketio.js",
         "debug:lni": "DEBUG='cuecue:*' nodemon --exec npm run babel-node -- ./examples/lni.js",
         "debug:treizelunes": "DEBUG='cuecue:*' nodemon --exec npm run babel-node -- ./examples/treizelunes.js",
         "migrate:store:up": "lerna exec --scope @cuecue/store-mysql -- npm run migrate:up",

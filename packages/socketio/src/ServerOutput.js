@@ -9,8 +9,8 @@ class ServerOutput extends BaseServer {
         });
 
         this.socket = null;
-
-        this.debug = createDebug('cuecue:output:socketio');
+        this.debug = createDebug('cuecue:output:socketio-server');
+        this.debug('started on: %O %s', opts, process.env.SOCKETIO_OUTPUT_NAMESPACE);
     }
 
     cue(cue, extraData = null) {
