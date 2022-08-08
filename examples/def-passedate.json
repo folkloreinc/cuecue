@@ -1,0 +1,56 @@
+{
+    "id": "passedate",
+    "cues": [
+        {
+            "id": "chat",
+            "type": "chat",
+            "withPreview": true,
+            "payload": {
+                "something": 2
+            }
+        },
+        {
+            "id": "video",
+            "type": "video",
+            "withPreview": false,
+            "payload": {
+                "something": 1
+            }
+        },
+        {
+            "id": "layout_full",
+            "type": "layout",
+            "layout": "full"
+        },
+        {
+            "id": "mute_all",
+            "type": "mute",
+            "participant": "all"
+        },
+        {
+            "id": "unmute_all",
+            "type": "unmute",
+            "participant": "all"
+        },
+        {
+            "id": "mute_1",
+            "type": "mute",
+            "participant": "presenter"
+        },
+        {
+            "id": "mute_2",
+            "type": "mute",
+            "participant": "group"
+        },
+        {
+            "id": "unmute_1",
+            "type": "unmute",
+            "participant": "presenter"
+        },
+        {
+            "id": "unmute_2",
+            "type": "unmute",
+            "participant": "group"
+        }
+    ]
+}
