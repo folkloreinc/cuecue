@@ -3,7 +3,7 @@ import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
-
+import isObject from 'lodash/isObject';
 import MemoryStore from './MemoryStore';
 
 class Application extends EventEmitter {
@@ -424,7 +424,8 @@ class Application extends EventEmitter {
 
     async onCue(state, cueId, sessionData = null) {
         const cues = await this.getCues();
-        const cue = cues.find(({ id }) => id === cueId) || null;
+        const { id: altCueId = null } = isObject(cueId) ? cueId : {};
+        const cue = cues.find(({ id }) => id === altCueId || cueId) || null;
 
         if (cue === null) {
             this.debug('Cannot find cue %s in %o', cueId, cues);
@@ -449,10 +450,11 @@ class Application extends EventEmitter {
 
     async onCued(state, cueId) {
         const cues = await this.getCues();
-        const cue = cues.find(({ id }) => id === cueId) || null;
+        const { id: altCueId = null } = isObject(cueId) ? cueId : {};
+        const cue = cues.find(({ id }) => id === altCueId || cueId) || null;
 
         if (cue === null) {
-            this.debug('Cannot find cue %s in %o', cues);
+            this.debug('Cannot find cue %s in %o', cueId, cues);
             return false;
         }
 
