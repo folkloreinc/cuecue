@@ -452,7 +452,7 @@ class Application extends EventEmitter {
         const cue = cues.find(({ id }) => id === cueId) || null;
 
         if (cue === null) {
-            this.debug('Cannot find cue %s', cueId);
+            this.debug('Cannot find cue %s in %o', cues);
             return false;
         }
 
