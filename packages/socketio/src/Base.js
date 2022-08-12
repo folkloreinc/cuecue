@@ -7,6 +7,7 @@ class Base extends BasePlugin {
         super({
             host: process.env.SOCKETIO_HOST || 'localhost',
             namespace: process.env.SOCKETIO_NAMESPACE || null,
+            path: process.env.SOCKETIO_PATH || null,
             ...opts,
         });
 
@@ -26,9 +27,10 @@ class Base extends BasePlugin {
     }
 
     async connectSocket() {
-        const { host, namespace } = this.options;
+        const { host, namespace = null, path = null } = this.options;
         this.socket = io(
             namespace !== null ? host.replace(/\/?$/, `/${namespace.replace(/^\//, '')}`) : host,
+            path !== null ? { path } : null,
         );
         this.socket.on('connect', this.onConnect);
         return Promise.resolve();
@@ -41,8 +43,8 @@ class Base extends BasePlugin {
     }
 
     onConnect() {
-        const { host, namespace } = this.options;
-        this.debug('Connected on %s/%s', host, namespace || '');
+        const { host, namespace = null, path = null } = this.options;
+        this.debug('Connected on %s/%s', host, namespace || '', path || '');
     }
 }
 
