@@ -9,6 +9,7 @@ class BaseServer extends BasePlugin {
             namespace: process.env.SOCKETIO_NAMESPACE || null,
             transports: ['websocket', 'polling'],
             server: null,
+            path: '/socket.io/',
             ...opts,
         });
 
@@ -31,8 +32,8 @@ class BaseServer extends BasePlugin {
     }
 
     async createServer() {
-        const { server, port, cors, transports, namespace } = this.options;
-        const ioOptions = { transports, cors };
+        const { server, port, cors, transports, namespace, path } = this.options;
+        const ioOptions = { transports, cors, path };
         this.io = io(ioOptions);
 
         this.namespace = namespace !== null ? this.io.of(namespace) : this.io;
