@@ -6,9 +6,6 @@ class ServerInput extends BaseServer {
     constructor({ commands = null, ...opts } = {}) {
         super({
             namespace: process.env.SOCKETIO_INPUT_NAMESPACE || null,
-            cors: {
-                origin: 'http://localhost:5000',
-            },
             ...opts,
         });
         this.onConnection = this.onConnection.bind(this);
