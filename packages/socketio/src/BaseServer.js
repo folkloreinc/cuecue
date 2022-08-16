@@ -1,6 +1,6 @@
 import { BasePlugin } from '@cuecue/core';
 import createDebug from 'debug';
-import io from 'socket.io';
+import { Server } from 'socket.io';
 
 class BaseServer extends BasePlugin {
     constructor({ commands = null, ...opts } = {}) {
@@ -34,12 +34,10 @@ class BaseServer extends BasePlugin {
     async createServer() {
         const { server, port, cors, transports, namespace, path } = this.options;
         const ioOptions = { transports, cors, path };
-        this.io = io(ioOptions);
+        this.io = new Server(server || port, ioOptions);
 
         this.namespace = namespace !== null ? this.io.of(namespace) : this.io;
         this.namespace.on('connection', this.onConnection);
-
-        this.io.listen(server || port);
 
         return Promise.resolve();
     }
