@@ -3,7 +3,6 @@ import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
-import isObject from 'lodash/isObject';
 import MemoryStore from './MemoryStore';
 
 class Application extends EventEmitter {
