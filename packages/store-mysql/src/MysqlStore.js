@@ -1,4 +1,4 @@
-import mysql from 'mysql';
+import mysql from 'mysql2';
 import StateMachine from 'javascript-state-machine';
 import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
