@@ -117,6 +117,9 @@ class Application extends EventEmitter {
     }
 
     async interact(data, interactionId = null) {
+        if (this.session === null) {
+            return null;
+        }
         this.sendInteractToOutputs(data, interactionId);
         const interaction = await this.ensureInteraction(data, interactionId || uuidv4());
         this.sendInteractionToOutputs(interaction);
