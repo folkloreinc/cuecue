@@ -2,7 +2,7 @@
     "name": "cuecue",
     "private": true,
     "scripts": {
-        "build": "lerna run build",
+        "build": "npm run build --workspaces --if-present",
         "test": "vitest run",
         "test:watch": "vitest",
         "lint": "eslint .",
@@ -15,8 +15,10 @@
         "example:socketio": "DEBUG='cuecue:*' npm run babel-node -- ./examples/socketio.js",
         "example:socketio-client": "DEBUG='cuecue:*' npm run babel-node -- ./examples/socketio-client.js",
         "debug:lni": "DEBUG='cuecue:*' nodemon --exec npm run babel-node -- ./examples/lni.js",
-        "migrate:store:up": "lerna exec --scope @cuecue/store-mysql -- npm run migrate:up",
-        "migrate:store:down": "lerna exec --scope @cuecue/store-mysql -- npm run migrate:down"
+        "migrate:store:up": "npm run migrate:up -w @cuecue/store-mysql",
+        "migrate:store:down": "npm run migrate:down -w @cuecue/store-mysql",
+        "changeset": "changeset",
+        "version-packages": "changeset version && npm install --package-lock-only"
     },
     "repository": {
         "type": "git",
@@ -47,6 +49,7 @@
         "@babel/core": "^7.29.13",
         "@babel/node": "^7.29.7",
         "@babel/preset-env": "^7.29.14",
+        "@changesets/cli": "^3.0.3",
         "@eslint/js": "^10.0.1",
         "@rollup/plugin-babel": "^7.1.0",
         "@rollup/plugin-commonjs": "^29.0.3",
@@ -56,7 +59,6 @@
         "eslint": "^10.15.0",
         "eslint-config-prettier": "^10.1.8",
         "globals": "^17.14.0",
-        "lerna": "^10.1.1",
         "nodemon": "^3.1.14",
         "prettier": "^3.10.1",
         "rollup": "^4.68.5",

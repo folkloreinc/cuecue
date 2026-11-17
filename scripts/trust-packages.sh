@@ -4,8 +4,9 @@
 # (.github/workflows/release.yml) can publish them without an npm token.
 #
 # A new configuration expires if no publish succeeds with it within 2 days, so only configure the
-# packages about to be published: run this right before pushing the release tag (no argument: the
-# packages whose current version isn't on npm yet), or pass the package names. Needs npm 11.15+,
+# packages about to be published: run this on the "Version packages" pull request branch right
+# before merging it (no argument: the packages whose version isn't on npm yet), or pass the
+# package names. Needs npm 11.15+,
 # write access to the packages and 2FA: npm asks for it on the first package, then skips it for 5
 # minutes.
 #

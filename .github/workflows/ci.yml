@@ -14,12 +14,13 @@ permissions:
 
 jobs:
     checks:
-        name: Format and lint
+        name: Format, lint and changeset
         runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
+                  fetch-depth: 0
 
             - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with:
@@ -34,6 +35,16 @@ jobs:
 
             - name: Lint
               run: npm run lint
+
+            # "Version packages" pull requests consume the changesets instead of adding one: the
+            # Release workflow opens them from changeset-release/* branches, and a maintainer may
+            # open one by hand with that title.
+            - name: Check for a changeset
+              if: >-
+                  github.event_name == 'pull_request' &&
+                  !startsWith(github.head_ref, 'changeset-release/') &&
+                  !startsWith(github.event.pull_request.title, 'Version packages')
+              run: npx changeset status --since=origin/${{ github.base_ref }}
 
     test:
         # The tests against a Pingpong server need Node 24: they are skipped on Node 22.
