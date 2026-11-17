@@ -29,6 +29,9 @@
         }
     ],
     "license": "ISC",
+    "engines": {
+        "node": ">=22"
+    },
     "main": "dist/index.js",
     "files": [
         "dist"
@@ -38,14 +41,13 @@
         "migrate:down": "db-migrate down --migrations-dir=./migrations --config=./migrations/config.json -e prod --dotenvCustomPath '../../.env'",
         "migrate:reset": "db-migrate reset --migrations-dir=./migrations --config=./migrations/config.json -e prod --dotenvCustomPath '../../.env'",
         "clean": "rm -rf dist",
-        "build": "rollup --config ../../rollup.config.js",
-        "prepare": "npm run clean && npm run build"
+        "build": "rollup --config ../../rollup.config.mjs",
+        "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@babel/runtime": "^7.12.5",
         "@cuecue/core": "^0.0.43",
-        "db-migrate": "^0.11.12",
-        "db-migrate-mysql": "^2.1.2",
+        "db-migrate": "^1.9.0",
+        "db-migrate-mysql": "^3.2.1",
         "debug": "^4.3.1",
         "dotenv": "^16.0.1",
         "javascript-state-machine": "^3.1.0",

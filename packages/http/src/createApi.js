@@ -47,7 +47,7 @@ const createApi = (app, input, externalRouter = null) => {
             res.json({
                 success: true,
             });
-        } catch (e) {
+        } catch {
             res.json({
                 success: false,
             });
@@ -77,7 +77,7 @@ const createApi = (app, input, externalRouter = null) => {
             res.json({
                 success: true,
             });
-        } catch (e) {
+        } catch {
             res.json({
                 success: false,
             });
@@ -101,7 +101,7 @@ const createApi = (app, input, externalRouter = null) => {
             res.json({
                 success: true,
             });
-        } catch (e) {
+        } catch {
             res.json({
                 success: false,
             });
@@ -122,7 +122,7 @@ const createApi = (app, input, externalRouter = null) => {
             res.json({
                 success: true,
             });
-        } catch (e) {
+        } catch {
             res.json({
                 success: false,
             });

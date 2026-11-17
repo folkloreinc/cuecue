@@ -1,4 +1,4 @@
-import config, { plugins } from '../../rollup.config';
+import config, { external, onwarn, plugins } from '../../rollup.config.mjs';
 
 export default [
     config,
@@ -9,6 +9,8 @@ export default [
             format: 'cjs',
             banner: '#!/usr/bin/env node',
         },
+        external,
+        onwarn,
         plugins,
     },
 ];

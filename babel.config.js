@@ -8,12 +8,9 @@ module.exports = {
             require.resolve('@babel/preset-env'),
             {
                 targets: {
-                    node: 12,
+                    node: 22,
                 },
-                useBuiltIns: false,
             },
         ],
     ],
-
-    plugins: [[require.resolve('@babel/plugin-transform-runtime'), {}]],
 };

@@ -13,7 +13,7 @@ command
 
         output.onStart();
 
-        console.log(commandName, commandArgs); //eslint-disable-line
+        console.log(commandName, commandArgs);
 
         output.send(commandName, ...commandArgs, (err) => {
             if (err) console.error(err);
@@ -21,4 +21,4 @@ command
         });
     });
 
-    export default command;
+export default command;

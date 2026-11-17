@@ -1,17 +1,10 @@
 {
-    "packages": [
-        "packages/*"
-    ],
+    "$schema": "node_modules/lerna/schemas/lerna-schema.json",
+    "packages": ["packages/*"],
     "version": "0.0.43",
     "command": {
         "publish": {
-            "allowBranch": [
-                "master",
-                "develop"
-            ]
-        },
-        "bootstrap": {
-            "hoist": true
+            "allowBranch": ["master", "develop"]
         }
     }
 }
