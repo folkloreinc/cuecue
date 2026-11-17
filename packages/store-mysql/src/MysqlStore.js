@@ -4,7 +4,15 @@ import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
 import isObject from 'lodash/isObject';
 import { parseStoreInputId, parseStoreOutputId } from '@cuecue/core';
-import { now, getParams, getInsertFields, getUpdateFields, getResult, getResults } from './utils';
+import {
+    now,
+    getParams,
+    getInsertFields,
+    getUpdateFields,
+    getResult,
+    getResults,
+    splitExtra,
+} from './utils';
 
 const debug = createDebug('cuecue:store:mysql');
 
@@ -37,6 +45,7 @@ class MysqlStore extends EventEmitter {
         this.onInvalidTransition = this.onInvalidTransition.bind(this);
 
         this.client = null;
+        this.columns = {};
 
         this.state = new StateMachine({
             transitions: [
@@ -91,76 +100,105 @@ class MysqlStore extends EventEmitter {
         return this.state.is('disconnected');
     }
 
-    findItem(type, externalId = null, internalId = null, withDeleted = false) {
+    query(sql, values = []) {
         return new Promise((resolve, reject) => {
-            const idParams = isObject(externalId)
-                ? externalId
-                : {
-                      ...(externalId !== null ? { externalId } : null),
-                      ...(internalId !== null ? { internalId } : null),
-                  };
-            const { where, values } = getParams(idParams);
-            this.client.query(
-                `SELECT * FROM ${type} WHERE ${where} ${
-                    withDeleted ? '' : 'AND ISNULL(deleted_at)'
-                } LIMIT 1`,
-                values,
-                (error, results) => {
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-                    const result =
-                        results !== null && results.length === 1 ? getResult(results[0]) : null;
-                    resolve(parseStoreOutputId(result));
-                },
-            );
+            this.client.query(sql, values, (error, results) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(results);
+            });
         });
     }
 
-    addItem(type, data) {
+    /**
+     * The names of a table's columns, read once.
+     */
+    getColumns(type) {
+        if (typeof this.columns[type] === 'undefined') {
+            const columns = this.query(`SHOW COLUMNS FROM \`${type}\``).then(
+                (results) => new Set(results.map(({ Field }) => Field)),
+            );
+            this.columns[type] = columns;
+            columns.catch(() => {
+                delete this.columns[type];
+            });
+        }
+        return this.columns[type];
+    }
+
+    /**
+     * Splits an item between the table's columns and its `extra` JSON column, for the fields
+     * without a column of their own.
+     */
+    async splitItem(type, data) {
+        const columns = await this.getColumns(type);
+        const { own, extra } = splitExtra(data, columns);
+        if (extra !== null && !columns.has('extra')) {
+            throw new Error(
+                `@cuecue/store-mysql: the ${type} table has no column for ${Object.keys(extra).join(
+                    ', ',
+                )}. Run the migrations to add its extra column.`,
+            );
+        }
+        return { own, extra };
+    }
+
+    async findItem(type, externalId = null, internalId = null, withDeleted = false) {
+        const idParams = isObject(externalId)
+            ? externalId
+            : {
+                  ...(externalId !== null ? { externalId } : null),
+                  ...(internalId !== null ? { internalId } : null),
+              };
+        const { where, values } = getParams(idParams, await this.getColumns(type));
+        const results = await this.query(
+            `SELECT * FROM ${type} WHERE ${where} ${
+                withDeleted ? '' : 'AND ISNULL(deleted_at)'
+            } LIMIT 1`,
+            values,
+        );
+        const result = results !== null && results.length === 1 ? getResult(results[0]) : null;
+        return parseStoreOutputId(result);
+    }
+
+    async addItem(type, data) {
         const parsedData = parseStoreInputId(data);
         const withCreated =
             parsedData !== null && !parsedData.created_at
                 ? { ...parsedData, created_at: now() }
                 : parsedData;
-        const { columns, fields, values } = getInsertFields(withCreated);
-        return new Promise((resolve, reject) => {
-            this.client.query(
-                `INSERT INTO ${type} (${columns}) VALUES(${fields})`,
-                values,
-                (error, results) => {
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-                    resolve(results);
-                },
-            );
-        }).then(({ insertId }) => this.findItem(type, null, insertId));
+        const { own, extra } = await this.splitItem(type, withCreated);
+        const { columns, fields, values } = getInsertFields(
+            extra !== null ? { ...own, extra: JSON.stringify(extra) } : own,
+        );
+        const { insertId } = await this.query(
+            `INSERT INTO ${type} (${columns}) VALUES(${fields})`,
+            values,
+        );
+        return this.findItem(type, null, insertId);
     }
 
     addItems(type, items) {
         return Promise.all(items.map((it) => this.addItem(type, it)));
     }
 
-    updateItem(type, externalId, data) {
+    async updateItem(type, externalId, data) {
         const parsedData = parseStoreInputId(data);
-        const withUpdated = { ...parsedData, updated_at: now() };
-        return new Promise((resolve, reject) => {
-            const { fields, values } = getUpdateFields(withUpdated);
-            this.client.query(
-                `UPDATE ${type} SET ${fields} WHERE externalId = ?`,
-                [...values, externalId],
-                (error, results) => {
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-                    resolve(results);
-                },
-            );
-        }).then(() => this.findItem(type, externalId));
+        const { own, extra } = await this.splitItem(type, { ...parsedData, updated_at: now() });
+        const { fields, values } = getUpdateFields(own);
+        // The new fields of `extra` replace its old ones, and the others stay.
+        const extraField =
+            extra !== null
+                ? ', `extra` = JSON_MERGE_PATCH(COALESCE(`extra`, JSON_OBJECT()), CAST(? AS JSON))'
+                : '';
+        await this.query(`UPDATE ${type} SET ${fields}${extraField} WHERE externalId = ?`, [
+            ...values,
+            ...(extra !== null ? [JSON.stringify(extra)] : []),
+            externalId,
+        ]);
+        return this.findItem(type, externalId);
     }
 
     deleteItem(type, externalId) {
@@ -169,41 +207,20 @@ class MysqlStore extends EventEmitter {
         });
     }
 
-    deleteItems(type, params = {}) {
-        return new Promise((resolve, reject) => {
-            const { where, values } = getParams(params);
-            this.client.query(
-                `UPDATE ${type} SET deleted_at = '${now()}' WHERE ${where}`,
-                values,
-                (error, results) => {
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-                    resolve(results);
-                },
-            );
-        });
+    async deleteItems(type, params = {}) {
+        const { where, values } = getParams(params, await this.getColumns(type));
+        return this.query(`UPDATE ${type} SET deleted_at = '${now()}' WHERE ${where}`, values);
     }
 
-    getItems(type, params = {}, withDeleted = false) {
-        return new Promise((resolve, reject) => {
-            const { where, values } = getParams(params);
-            const link = values.length > 0 ? `AND` : `WHERE`;
-            const deleted = withDeleted ? '' : `${link} ISNULL(deleted_at)`;
-            this.client.query(
-                `SELECT * FROM ${type} ${values.length > 0 ? `WHERE ${where}` : ''} ${deleted}`,
-                values,
-                (error, results) => {
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-                    const allResults = getResults(results);
-                    resolve(parseStoreOutputId(allResults));
-                },
-            );
-        });
+    async getItems(type, params = {}, withDeleted = false) {
+        const { where, values } = getParams(params, await this.getColumns(type));
+        const link = values.length > 0 ? `AND` : `WHERE`;
+        const deleted = withDeleted ? '' : `${link} ISNULL(deleted_at)`;
+        const results = await this.query(
+            `SELECT * FROM ${type} ${values.length > 0 ? `WHERE ${where}` : ''} ${deleted}`,
+            values,
+        );
+        return parseStoreOutputId(getResults(results));
     }
 
     async onInit() {
@@ -226,6 +243,8 @@ class MysqlStore extends EventEmitter {
     endPool() {
         const pool = this.client;
         this.client = null;
+        // The migrations may change the columns before the next connection.
+        this.columns = {};
         if (pool === null) {
             return Promise.resolve();
         }

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Application from './Application';
+import MemoryStore from './MemoryStore';
 
 const tick = () =>
     new Promise((resolve) => {
@@ -162,5 +163,412 @@ describe('Application cue durations', () => {
         await vi.advanceTimersByTimeAsync(1100);
 
         expect(app.getCurrentCueId()).toBe('vote');
+    });
+});
+
+const createRecorder = () => {
+    const calls = [];
+    const record =
+        (method) =>
+        (...args) => {
+            calls.push([method, ...args]);
+            return Promise.resolve();
+        };
+    return {
+        calls,
+        commands: () =>
+            calls.filter(([method]) => method === 'command').map(([, command]) => command),
+        output: {
+            cue: record('cue'),
+            cues: record('cues'),
+            interact: record('interact'),
+            interaction: record('interaction'),
+            uninteractions: record('uninteractions'),
+            command: record('command'),
+        },
+    };
+};
+
+describe('Application lifecycle', () => {
+    it('starts idle, with a new session', async () => {
+        const app = createApp({ id: 'show' });
+        expect(app.stateless()).toBe(true);
+
+        await app.start();
+        await tick();
+
+        expect(app.idle()).toBe(true);
+        expect(app.session).toMatchObject({ definition: 'show', started: true, ended: false });
+        expect(app.session.id).toMatch(/^show_\d{4}_\d{2}_\d{2}_/);
+    });
+
+    it('sends its cues, start and its state to the outputs', async () => {
+        const app = createApp({ cues: [{ id: 'intro' }] });
+        const recorder = createRecorder();
+        app.output(recorder.output);
+
+        await app.start();
+        await tick();
+
+        expect(recorder.calls[0]).toEqual([
+            'cues',
+            [expect.objectContaining({ id: 'intro', sessionId: app.session.id })],
+        ]);
+        expect(recorder.calls).toContainEqual(['command', 'start', { sessionId: app.session.id }]);
+        expect(recorder.calls).toContainEqual([
+            'command',
+            'state',
+            { sessionId: app.session.id, currentState: 'idle' },
+        ]);
+    });
+
+    it('cues and uncues', async () => {
+        const app = createApp({ cues: [{ id: 'intro', stateful: true }] });
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+
+        await app.cue('intro', { round: 1 });
+        expect(app.state.state).toBe('cued');
+        expect(app.getCurrentCueId()).toBe('intro');
+        expect(app.getSessionData()).toEqual({ round: 1 });
+        expect(await app.getSessionCue()).toMatchObject({ id: 'intro' });
+        expect(recorder.calls).toContainEqual([
+            'cue',
+            expect.objectContaining({ id: 'intro' }),
+            { round: 1 },
+        ]);
+
+        await app.uncue();
+        expect(app.idle()).toBe(true);
+        expect(app.getCurrentCueId()).toBe(null);
+        expect(await app.getSessionCue()).toBe(null);
+        expect(recorder.calls).toContainEqual(['command', 'uncue', { sessionId: app.session.id }]);
+    });
+
+    it('sends a cue that isn’t stateful without keeping it', async () => {
+        const app = createApp({
+            cues: [{ id: 'intro', stateful: true }, { id: 'applause' }],
+        });
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+        await app.cue('intro');
+
+        await app.cue('applause');
+
+        expect(recorder.calls).toContainEqual([
+            'cue',
+            expect.objectContaining({ id: 'applause' }),
+            null,
+        ]);
+        expect(app.getCurrentCueId()).toBe('intro');
+    });
+
+    it('ignores a cue it doesn’t have', async () => {
+        const app = createApp({ cues: [{ id: 'intro', stateful: true }] });
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+
+        await app.cue('missing');
+
+        expect(app.idle()).toBe(true);
+        expect(recorder.calls.filter(([method]) => method === 'cue')).toEqual([]);
+    });
+
+    it('ignores commands that its state doesn’t allow', async () => {
+        const app = createApp({ cues: [{ id: 'intro' }] });
+
+        await app.cue('intro');
+        expect(app.stateless()).toBe(true);
+
+        await app.start();
+        await app.start();
+        expect(app.idle()).toBe(true);
+    });
+
+    it('ends its session, then starts a new one', async () => {
+        const app = createApp({ cues: [{ id: 'intro', stateful: true }] });
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+        await tick();
+        const first = app.session.id;
+        await app.cue('intro');
+
+        await app.end();
+        expect(app.ended()).toBe(true);
+        expect(app.session).toBe(null);
+        expect(app.getCurrentCueId()).toBe(null);
+        expect(recorder.commands()).toContain('end');
+        expect(await app.store.findItem('sessions', first)).toMatchObject({
+            started: false,
+            ended: true,
+            cue: null,
+        });
+
+        // Two sessions of the same definition in the same millisecond would share a handle.
+        await new Promise((resolve) => {
+            setTimeout(resolve, 5);
+        });
+        await app.start();
+        await tick();
+        expect(app.idle()).toBe(true);
+        expect(app.session.id).not.toBe(first);
+    });
+
+    it('stops, then starts again in the same session', async () => {
+        const app = createApp();
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+        await tick();
+        const { id } = app.session;
+
+        await app.stop();
+        expect(app.stopped()).toBe(true);
+        expect(recorder.commands()).toContain('stop');
+
+        await app.start();
+        await tick();
+        expect(app.idle()).toBe(true);
+        expect(app.session.id).toBe(id);
+    });
+
+    it('resumes the started session of its store, with its cue', async () => {
+        const store = new MemoryStore();
+        const first = createApp({ cues: [{ id: 'intro', stateful: true }] }, { store });
+        await first.start();
+        await tick();
+        await first.cue('intro', { round: 2 });
+
+        const second = createApp({ cues: [{ id: 'intro', stateful: true }] }, { store });
+        const cued = new Promise((resolve) => {
+            second.once('cue', (...args) => resolve(args));
+        });
+        await second.start();
+
+        const [cue, data] = await cued;
+        expect(second.session.id).toBe(first.session.id);
+        expect(cue).toMatchObject({ id: 'intro' });
+        expect(data).toEqual({ round: 2 });
+        await vi.waitFor(() => expect(second.getCurrentCueId()).toBe('intro'));
+    });
+
+    it('resets its session: no cue, no interactions', async () => {
+        const app = createApp({ cues: [{ id: 'intro', stateful: true }] });
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+        await app.cue('intro');
+        await app.interact({ vote: 'a' }, 'interaction-1');
+
+        await app.reset();
+
+        expect(app.idle()).toBe(true);
+        expect(app.getCurrentCueId()).toBe(null);
+        expect(await app.getInteractions()).toEqual([]);
+        expect(recorder.commands()).toContain('reset');
+    });
+});
+
+describe('Application cues', () => {
+    it('defines new cues, which replace the cues with the same id', async () => {
+        const app = createApp({
+            cues: [
+                { id: 'intro', label: 'Intro' },
+                { id: 'vote', label: 'Vote' },
+            ],
+        });
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+
+        await app.define({ id: 'vote', label: 'New vote' }, { id: 'credits' });
+
+        const cues = await app.getCues();
+        expect(cues.map(({ id, label }) => [id, label])).toEqual([
+            ['vote', 'New vote'],
+            ['credits', undefined],
+            ['intro', 'Intro'],
+        ]);
+        expect(recorder.calls.at(-1)).toEqual(['cues', cues]);
+    });
+
+    it('keeps the cues of each session apart', async () => {
+        const store = new MemoryStore();
+        const show = createApp({ id: 'show', cues: [{ id: 'intro' }] }, { store });
+        const other = createApp({ id: 'other', cues: [{ id: 'credits' }] }, { store });
+        await show.start();
+        await other.start();
+
+        expect((await show.getCues()).map(({ id }) => id)).toEqual(['intro']);
+        expect((await other.getCues()).map(({ id }) => id)).toEqual(['credits']);
+    });
+});
+
+describe('Application interactions', () => {
+    it('ignores interactions outside a session', async () => {
+        const app = createApp();
+        expect(await app.interact({ vote: 'a' })).toBe(null);
+    });
+
+    it('keeps an interaction and sends it to the outputs', async () => {
+        const app = createApp();
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+
+        const interaction = await app.interact({ vote: 'a' }, 'interaction-1');
+
+        expect(interaction).toMatchObject({
+            id: 'interaction-1',
+            sessionId: app.session.id,
+            data: { vote: 'a' },
+        });
+        expect(recorder.calls).toContainEqual(['interact', { vote: 'a' }, 'interaction-1']);
+        expect(recorder.calls).toContainEqual(['interaction', interaction]);
+        expect(await app.getInteractions()).toEqual([interaction]);
+    });
+
+    it('gives an id to an interaction without one', async () => {
+        const app = createApp();
+        await app.start();
+
+        const interaction = await app.interact({ vote: 'a' });
+
+        expect(interaction.id).toMatch(/^[0-9a-f-]{36}$/);
+    });
+
+    it('updates an interaction with the same id instead of adding one', async () => {
+        const app = createApp();
+        await app.start();
+
+        await app.interact({ vote: 'a' }, 'interaction-1');
+        await app.interact({ vote: 'b' }, 'interaction-1');
+
+        const interactions = await app.getInteractions();
+        expect(interactions).toHaveLength(1);
+        expect(interactions[0].data).toEqual({ vote: 'b' });
+    });
+
+    it('ties interactions to the current cue when it takes interactions', async () => {
+        const app = createApp({
+            cues: [
+                { id: 'vote', stateful: true, interaction: true },
+                { id: 'credits', stateful: true },
+            ],
+        });
+        await app.start();
+        await app.cue('vote');
+        await app.interact({ vote: 'a' }, 'interaction-1');
+        await app.cue('credits');
+        await app.interact({ vote: 'b' }, 'interaction-2');
+
+        expect((await app.getInteractionsByCue('vote')).map(({ id }) => id)).toEqual([
+            'interaction-1',
+        ]);
+        expect(
+            (await app.getInteractions()).find(({ id }) => id === 'interaction-2'),
+        ).not.toHaveProperty('cueId');
+    });
+
+    it('resets some interactions and tells the outputs', async () => {
+        const app = createApp();
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+        await app.interact({ vote: 'a' }, 'interaction-1');
+        await app.interact({ vote: 'b' }, 'interaction-2');
+
+        await app.resetInteractions('interaction-1');
+
+        expect((await app.getInteractions()).map(({ id }) => id)).toEqual(['interaction-2']);
+        expect(recorder.calls).toContainEqual(['uninteractions', ['interaction-1']]);
+    });
+});
+
+describe('Application inputs', () => {
+    const createInput = () => {
+        const listeners = new Set();
+        return {
+            on: (event, listener) => listeners.add(listener),
+            off: (event, listener) => listeners.delete(listener),
+            send: (command, ...args) =>
+                Promise.all([...listeners].map((listener) => listener(command, ...args))),
+        };
+    };
+
+    it('runs the commands of its inputs', async () => {
+        const app = createApp({ cues: [{ id: 'intro', stateful: true }] });
+        const input = createInput();
+        app.input(input);
+
+        await input.send('start');
+        await tick();
+        await input.send('cue', 'intro');
+
+        expect(app.getCurrentCueId()).toBe('intro');
+    });
+
+    it('refuses the commands that validateCommand refuses', async () => {
+        const app = createApp(
+            {},
+            { validateCommand: (command) => ['start', 'cue'].includes(command) },
+        );
+        const input = createInput();
+        app.input(input);
+        await app.start();
+
+        await input.send('end');
+        await input.send('destroy');
+
+        expect(app.idle()).toBe(true);
+    });
+
+    it('only runs inputCommands when they are set', async () => {
+        const app = createApp(
+            { cues: [{ id: 'intro', stateful: true }] },
+            { inputCommands: ['cue'] },
+        );
+        const input = createInput();
+        app.input(input);
+        await app.start();
+
+        await input.send('cue', 'intro');
+        await input.send('end');
+
+        expect(app.getCurrentCueId()).toBe('intro');
+        expect(app.ended()).toBe(false);
+    });
+
+    it('applies transformCommand', async () => {
+        const app = createApp(
+            { cues: [{ id: 'intro', stateful: true }] },
+            {
+                transformCommand: (command, args) =>
+                    command === 'go' ? { command: 'cue', args } : null,
+            },
+        );
+        const input = createInput();
+        app.input(input);
+        await app.start();
+
+        await input.send('go', 'intro');
+
+        expect(app.getCurrentCueId()).toBe('intro');
+    });
+
+    it('stops listening to a removed input', async () => {
+        const app = createApp({ cues: [{ id: 'intro', stateful: true }] });
+        const input = createInput();
+        app.input(input);
+        await app.start();
+
+        app.removeInput(input);
+        await input.send('cue', 'intro');
+
+        expect(app.getCurrentCueId()).toBe(null);
     });
 });

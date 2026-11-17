@@ -66,7 +66,7 @@ const createApi = (app, input, externalRouter = null) => {
             return;
         }
         try {
-            await app.define(body);
+            await app.define(...(isArray(body) ? body : [body]));
             res.json({
                 success: true,
             });

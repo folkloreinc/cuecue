@@ -23,11 +23,41 @@ export const getWhereFromParams = (params = {}, operator = 'AND') =>
 
 export const getValuesFromParams = (params) => Object.keys(params).map((key) => params[key]) || [];
 
-export const getParams = (params) => {
+// With the table's columns, a field without a column of its own is looked up in `extra`.
+export const getParams = (params, columns = null) => {
     const realParams = getIdFromParams(params);
-    const where = getWhereFromParams(realParams);
-    const values = getValuesFromParams(realParams);
-    return { where, values };
+    if (columns === null) {
+        return {
+            where: getWhereFromParams(realParams),
+            values: getValuesFromParams(realParams),
+        };
+    }
+    const conditions = [];
+    const values = [];
+    Object.keys(realParams).forEach((key) => {
+        if (columns.has(key)) {
+            conditions.push(`\`${key}\` = ?`);
+            values.push(realParams[key]);
+        } else {
+            conditions.push('JSON_UNQUOTE(JSON_EXTRACT(`extra`, ?)) = ?');
+            values.push(`$.${JSON.stringify(key)}`, realParams[key]);
+        }
+    });
+    return { where: conditions.join(' AND '), values };
+};
+
+// Splits an item between the table's columns and `extra`, for the fields without a column.
+export const splitExtra = (data, columns) => {
+    const own = {};
+    const extra = {};
+    Object.keys(data).forEach((key) => {
+        if (columns.has(key)) {
+            own[key] = data[key];
+        } else {
+            extra[key] = data[key];
+        }
+    });
+    return { own, extra: Object.keys(extra).length > 0 ? extra : null };
 };
 
 export const setUpdateData = (data) =>
@@ -71,16 +101,20 @@ export const getInsertFields = (data) => {
     };
 };
 
-export const getResult = (result) =>
-    isObject(result)
-        ? Object.keys(result).reduce((acc, key) => {
-              if (key === 'data' && isString(result[key])) {
-                  acc[key] = JSON.parse(result[key]);
-              } else {
-                  acc[key] = result[key];
-              }
-              return acc;
-          }, {})
-        : null;
+export const getResult = (result) => {
+    if (!isObject(result)) {
+        return null;
+    }
+    const { extra = null, ...columns } = Object.keys(result).reduce((acc, key) => {
+        if ((key === 'data' || key === 'extra') && isString(result[key])) {
+            acc[key] = JSON.parse(result[key]);
+        } else {
+            acc[key] = result[key];
+        }
+        return acc;
+    }, {});
+    // The fields in `extra` come back as fields of the item.
+    return { ...(isObject(extra) ? extra : null), ...columns };
+};
 
 export const getResults = (results) => results.map((res) => getResult(res));

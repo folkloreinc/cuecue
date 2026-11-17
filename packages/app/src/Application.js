@@ -114,7 +114,14 @@ class Application extends EventEmitter {
         return this.state.end();
     }
 
-    cue(id, sessionData = null) {
+    async cue(id, sessionData = null) {
+        // The state machine doesn't cancel a transition when an async hook returns false: check
+        // the cue first, so that a missing cue doesn't put the app in the cued state.
+        const cues = (await this.getCues()) || [];
+        if (!cues.some((cue) => cue.id === id)) {
+            this.debug('Cannot find cue %s', id);
+            return false;
+        }
         return this.state.cue(id, sessionData);
     }
 
@@ -247,7 +254,7 @@ class Application extends EventEmitter {
             ids.map((id) =>
                 this.store.deleteItems('interactions', {
                     sessionId: this.session.id,
-                    externalId: id,
+                    id,
                 }),
             ),
         );
@@ -272,16 +279,13 @@ class Application extends EventEmitter {
         const { id: sessionId = null } = this.session || {};
         return this.store.getItems('interactions', {
             sessionId,
-            interactionId,
+            id: interactionId,
         });
     }
 
+    // An interaction sent with a user's id (X-User-Id in @cuecue/http) has that id.
     getInteractionsByUser(userId) {
-        const { id: sessionId = null } = this.session || {};
-        return this.store.getItems('interactions', {
-            sessionId,
-            userId,
-        });
+        return this.getInteractionsByInteractionId(userId);
     }
 
     getCues(session) {
