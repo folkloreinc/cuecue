@@ -12,8 +12,11 @@ describe('HttpOutput', () => {
         await app.start();
         await app.cue('intro');
 
-        expect(logger.error).toHaveBeenCalledWith(
-            expect.stringMatching(/^\[cuecue\] An output failed on "cue": /),
+        // The app doesn't wait for its outputs: the failure comes once the request fails.
+        await vi.waitFor(() =>
+            expect(logger.error).toHaveBeenCalledWith(
+                expect.stringMatching(/^\[cuecue\] An output failed on "cue": /),
+            ),
         );
     });
 });

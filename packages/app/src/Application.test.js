@@ -519,6 +519,152 @@ describe('Application interactions', () => {
     });
 });
 
+describe('Application commands during a transition', () => {
+    // Settles with 'timeout' when the promise doesn't settle in time, instead of hanging the test.
+    const settled = (promise, ms = 500) =>
+        Promise.race([
+            promise.then(() => 'settled'),
+            new Promise((resolve) => {
+                setTimeout(() => resolve('timeout'), ms);
+            }),
+        ]);
+
+    const createInput = () => {
+        const listeners = [];
+        return {
+            on: (event, listener) => listeners.push(listener),
+            send: (command, ...args) =>
+                Promise.all(listeners.map((listener) => listener(command, ...args))),
+        };
+    };
+
+    // An output that only answers when told to, like an unreachable PubNub before its timeout.
+    const createSlowOutput = () => {
+        const calls = [];
+        const pending = [];
+        const record =
+            (method) =>
+            (...args) => {
+                calls.push(method === 'command' ? [method, args[0], args[1]] : [method, args[0]]);
+                return new Promise((resolve) => {
+                    pending.push(resolve);
+                });
+            };
+        return {
+            calls,
+            answerAll: () => pending.splice(0).forEach((resolve) => resolve()),
+            output: {
+                cue: record('cue'),
+                cues: record('cues'),
+                command: record('command'),
+            },
+        };
+    };
+
+    // A store that takes some time to save, like MySQL.
+    class SlowStore extends MemoryStore {
+        async updateItem(...args) {
+            await new Promise((resolve) => {
+                setTimeout(resolve, 10);
+            });
+            return super.updateItem(...args);
+        }
+    }
+
+    const cues = [
+        { id: 'intro', stateful: true },
+        { id: 'vote', stateful: true },
+    ];
+
+    it('doesn’t wait for the outputs to finish a transition', async () => {
+        const app = createApp({ cues });
+        const slow = createSlowOutput();
+        app.output(slow.output);
+        await settled(app.start());
+
+        expect(await settled(app.cue('intro'))).toBe('settled');
+        expect(app.getCurrentCueId()).toBe('intro');
+        expect(await settled(app.uncue())).toBe('settled');
+        expect(await settled(app.end())).toBe('settled');
+        expect(app.ended()).toBe(true);
+    });
+
+    it('runs a command sent while a cue waits for its outputs', async () => {
+        const app = createApp({ cues });
+        const slow = createSlowOutput();
+        app.output(slow.output);
+        await settled(app.start());
+
+        const first = app.cue('intro');
+        const second = app.cue('vote');
+
+        expect(await settled(Promise.all([first, second]))).toBe('settled');
+        expect(app.getCurrentCueId()).toBe('vote');
+        slow.answerAll();
+    });
+
+    it('runs the commands of its inputs one after the other, in order', async () => {
+        const app = createApp({ cues }, { store: new SlowStore() });
+        const input = createInput();
+        app.input(input);
+        const recorder = createRecorder();
+        app.output(recorder.output);
+        await app.start();
+        await tick();
+
+        const sent = [
+            input.send('cue', 'intro'),
+            input.send('cue', 'vote'),
+            input.send('uncue'),
+            input.send('cue', 'intro'),
+            input.send('end'),
+        ];
+
+        expect(await settled(Promise.all(sent))).toBe('settled');
+        expect(app.ended()).toBe(true);
+        expect(app.options.logger.error).not.toHaveBeenCalled();
+        const sessionId = recorder.calls.find(([, command]) => command === 'start')[2].sessionId;
+        expect(await app.store.findItem('sessions', sessionId)).toMatchObject({ ended: true });
+        const messages = recorder.calls
+            .map(([method, arg]) => (method === 'cue' ? `cue ${arg.id}` : arg))
+            .filter((message) => typeof message === 'string' && message !== 'state');
+        expect(messages).toEqual(['start', 'cue intro', 'cue vote', 'uncue', 'cue intro', 'end']);
+    });
+
+    it('keeps the order of the messages to each output', async () => {
+        const app = createApp({ cues });
+        const slow = createSlowOutput();
+        app.output(slow.output);
+        await settled(app.start());
+        slow.calls.splice(0);
+
+        await settled(Promise.all([app.cue('intro'), app.cue('vote'), app.uncue()]));
+
+        expect(slow.calls).toEqual([
+            ['cue', expect.objectContaining({ id: 'intro' })],
+            ['command', 'state', expect.objectContaining({ currentState: 'cued' })],
+            ['cue', expect.objectContaining({ id: 'vote' })],
+            ['command', 'state', expect.objectContaining({ currentState: 'cued' })],
+            ['command', 'uncue', expect.anything()],
+            ['command', 'state', expect.objectContaining({ currentState: 'idle' })],
+        ]);
+        slow.answerAll();
+    });
+
+    it('restarts once the running transition ends', async () => {
+        const app = createApp({ cues });
+        await app.start();
+        await tick();
+
+        const cued = app.cue('intro');
+        const restarted = app.restart();
+
+        expect(await settled(Promise.all([cued, restarted]))).toBe('settled');
+        expect(app.stateless()).toBe(false);
+        expect(app.options.logger.error).not.toHaveBeenCalled();
+    });
+});
+
 describe('Application inputs', () => {
     const createInput = () => {
         const listeners = new Set();
