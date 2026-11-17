@@ -17,19 +17,19 @@ class OscOutput extends Base {
     }
 
     cue(cue, extraData = null) {
-        this.command('cue', cue, extraData);
+        return this.command('cue', cue, extraData);
     }
 
     cues(cues) {
-        this.command('cues', cues);
+        return this.command('cues', cues);
     }
 
     interaction(interaction) {
-        this.command('interaction', interaction);
+        return this.command('interaction', interaction);
     }
 
     interact(data, interactionId = null) {
-        this.command('interact', data, interactionId);
+        return this.command('interact', data, interactionId);
     }
 
     async command(command, ...args) {

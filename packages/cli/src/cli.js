@@ -10,4 +10,4 @@ const program = new Command();
 
 program.version(version).description('CLI to interact with cuecue').addCommand(oscOutput);
 
-program.parse(process.argv);
+program.parseAsync(process.argv);

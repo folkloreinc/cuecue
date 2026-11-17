@@ -13,6 +13,8 @@ class Application extends EventEmitter {
         this.options = {
             store: new MemoryStore(),
             debugFunction: createDebug('cuecue:app'),
+            // Where failed outputs and commands are logged, with logger.error()
+            logger: console,
             getHandle: (id) => `${id}_${dayjs().format('YYYY_MM_DD')}_${Date.now().toString(36)}`,
             validateCommand: (command) =>
                 [
@@ -150,6 +152,10 @@ class Application extends EventEmitter {
     }
 
     async reset() {
+        if (this.session === null) {
+            this.debug('reset ignored: no session');
+            return;
+        }
         await this.resetSessionInteractions();
         await this.resetSession();
         await this.uncue();
@@ -219,9 +225,13 @@ class Application extends EventEmitter {
     }
 
     async resetInteractions(...args) {
+        if (this.session === null) {
+            this.debug('resetInteractions ignored: no session');
+            return;
+        }
         const ids = args || [];
 
-        this.resetInteractidonsByIds(ids);
+        await this.resetInteractionsByIds(ids);
 
         await this.sendUninteractionsToOutputs(ids);
     }
@@ -232,7 +242,7 @@ class Application extends EventEmitter {
         });
     }
 
-    async resetInteractidonsByIds(ids) {
+    async resetInteractionsByIds(ids) {
         return Promise.all(
             ids.map((id) =>
                 this.store.deleteItems('interactions', {
@@ -400,7 +410,10 @@ class Application extends EventEmitter {
         return process.nextTick(() => {
             this.emit('idle');
 
-            // Recover
+            // Recover, unless the session ended meanwhile
+            if (this.session === null) {
+                return;
+            }
             const { cue = null, ended = false, data = null } = this.session;
             if (ended) {
                 this.end();
@@ -431,6 +444,9 @@ class Application extends EventEmitter {
             this.debug('Cannot find cue %s in %o', cueId, cues);
             return false;
         }
+
+        // The previous cue's duration doesn't apply to this one.
+        this.stopCueDurationInterval();
 
         const { id = null, stateful = false } = cue;
         if (stateful) {
@@ -468,19 +484,19 @@ class Application extends EventEmitter {
     async onCueDurationEnd(cue) {
         this.debug('Cue %s duration is ended', cue.id);
         const { after_duration: afterDuration = null } = cue;
-        const { cues = [] } = this.definition;
+        const cues = (await this.getCues()) || [];
         switch (afterDuration) {
             case 'next': {
                 const cueIndex = cues.findIndex((it) => it.id === cue.id);
                 const nextCue =
                     cueIndex !== -1 && cueIndex < cues.length - 1 ? cues[cueIndex + 1] : null;
                 if (nextCue !== null) {
-                    this.cue(nextCue.id);
+                    await this.cue(nextCue.id);
                 }
                 break;
             }
             default:
-                this.uncue();
+                await this.uncue();
                 break;
         }
     }
@@ -542,10 +558,10 @@ class Application extends EventEmitter {
 
             this.emit('input:command', finalCommand, finalArgs);
 
-            this[finalCommand](...finalArgs);
-            this.debug(this[finalCommand], finalArgs);
+            await this[finalCommand](...finalArgs);
         } catch (e) {
-            this.debug(`Error with command "${command}": ${e.message}`);
+            const { logger } = this.options;
+            logger.error(`[cuecue] The command "${command}" failed: ${e.message}`);
         }
     }
 
@@ -578,24 +594,22 @@ class Application extends EventEmitter {
     }
 
     startCueDurationInterval(cue) {
-        const { duration = null } = cue;
-        const startTime = new Date().getTime();
-        this.debug('Starting interval for %i for cue %s...', duration, cue.id);
-        this.cueDurationInterval = setInterval(() => {
-            const currentTime = new Date().getTime();
-            const currentDuration = Math.floor((currentTime - startTime) / 1000);
-            if (currentDuration >= duration) {
-                clearInterval(this.cueDurationInterval);
-                this.cueDurationInterval = null;
-                this.onCueDurationEnd(cue);
-            }
-        }, 10);
+        const { id, duration = null } = cue;
+        this.stopCueDurationInterval();
+        this.debug('Cue %s ends in %s s', id, duration);
+        this.cueDurationInterval = setTimeout(() => {
+            this.cueDurationInterval = null;
+            this.onCueDurationEnd(cue).catch((error) => {
+                const { logger } = this.options;
+                logger.error(`[cuecue] Ending the cue "${id}" failed: ${error.message}`);
+            });
+        }, duration * 1000);
     }
 
     stopCueDurationInterval() {
         if (this.cueDurationInterval !== null) {
-            this.debug('Stopping interval for cue...');
-            clearInterval(this.cueDurationInterval);
+            this.debug('Stopping the duration of the cue...');
+            clearTimeout(this.cueDurationInterval);
             this.cueDurationInterval = null;
         }
     }
@@ -728,77 +742,61 @@ class Application extends EventEmitter {
         );
     }
 
-    sendCueToOutputs(cue, sessionData = null) {
-        this.debug('Send cue to outputs: %O %O', cue, sessionData);
+    /**
+     * Calls a method of every output that has it. An output that fails is logged and never stops
+     * the others, nor the show.
+     */
+    sendToOutputs(method, ...args) {
+        const { logger } = this.options;
+        const name = method === 'command' ? args[0] : method;
         return Promise.all(
-            this.outputs.map((it) =>
-                typeof it.cue !== 'undefined' ? it.cue(cue, sessionData) : Promise.resolve(),
+            this.outputs.map((output) =>
+                typeof output[method] !== 'undefined'
+                    ? Promise.resolve()
+                          .then(() => output[method](...args))
+                          .catch((error) => {
+                              logger.error(
+                                  `[cuecue] An output failed on "${name}": ${error.message}`,
+                              );
+                          })
+                    : Promise.resolve(),
             ),
         );
+    }
+
+    sendCueToOutputs(cue, sessionData = null) {
+        this.debug('Send cue to outputs: %O %O', cue, sessionData);
+        return this.sendToOutputs('cue', cue, sessionData);
     }
 
     sendCuesToOutputs(cues) {
         this.debug('Send cues to outputs: %O', cues);
-        return Promise.all(
-            this.outputs.map((it) =>
-                typeof it.cues !== 'undefined' ? it.cues(cues) : Promise.resolve(),
-            ),
-        );
+        return this.sendToOutputs('cues', cues);
     }
 
     sendInteractToOutputs(data, interactionId) {
         this.debug('Send interact to outputs: %O %s', data, interactionId);
-        return Promise.all(
-            this.outputs.map((it) =>
-                typeof it.interact !== 'undefined'
-                    ? it.interact(data, interactionId)
-                    : Promise.resolve(),
-            ),
-        );
+        return this.sendToOutputs('interact', data, interactionId);
     }
 
     sendInteractionToOutputs(interaction) {
         this.debug('Send interaction to outputs: %O', interaction);
-        return Promise.all(
-            this.outputs.map((it) =>
-                typeof it.interaction !== 'undefined'
-                    ? it.interaction(interaction)
-                    : Promise.resolve(),
-            ),
-        );
+        return this.sendToOutputs('interaction', interaction);
     }
 
     sendUninteractionToOutputs(interactionId) {
         this.debug('Send interact to outputs: %O %s', interactionId);
-        return Promise.all(
-            this.outputs.map((it) =>
-                typeof it.uninteraction !== 'undefined'
-                    ? it.uninteraction(interactionId)
-                    : Promise.resolve(),
-            ),
-        );
+        return this.sendToOutputs('uninteraction', interactionId);
     }
 
     sendUninteractionsToOutputs(interactionIds) {
         this.debug('Send uninteractions to outputs: %O', interactionIds);
-        return Promise.all(
-            this.outputs.map((it) =>
-                typeof it.uninteractions !== 'undefined'
-                    ? it.uninteractions(interactionIds)
-                    : Promise.resolve(),
-            ),
-        );
+        return this.sendToOutputs('uninteractions', interactionIds);
     }
 
     sendCommandToOutputs(command, ...args) {
         this.debug(`Send command to outputs: %s %o`, command, args);
-        return Promise.all(
-            this.outputs.map((it) =>
-                typeof it.command !== 'undefined'
-                    ? it.command(command, ...args)
-                    : Promise.resolve(),
-            ),
-        );
+        return this.sendToOutputs('command', command, ...args);
     }
 
     stopInputs() {

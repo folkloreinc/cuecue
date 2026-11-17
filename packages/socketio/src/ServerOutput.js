@@ -14,27 +14,27 @@ class ServerOutput extends BaseServer {
     }
 
     cue(cue, extraData = null) {
-        this.command('cue', cue, extraData);
+        return this.command('cue', cue, extraData);
     }
 
     cues(cues) {
-        this.command('cues', cues);
+        return this.command('cues', cues);
     }
 
     interact(data, interactionId = null) {
-        this.command('interact', data, interactionId);
+        return this.command('interact', data, interactionId);
     }
 
     interaction(interaction) {
-        this.command('interaction', interaction);
+        return this.command('interaction', interaction);
     }
 
     uninteraction(interactionId) {
-        this.command('uninteract', interactionId);
+        return this.command('uninteract', interactionId);
     }
 
     uninteractions(interactionIds) {
-        this.command('uninteractions', interactionIds);
+        return this.command('uninteractions', interactionIds);
     }
 
     async command(command, ...args) {
@@ -71,7 +71,7 @@ class ServerOutput extends BaseServer {
 
         const payload = transformMessage !== null ? await transformMessage(message) : message;
 
-        return namespace !== null ? this.sendToNamespace(payload) : this.send(payload);
+        return namespace !== null ? this.sendToNamespace(namespace, payload) : this.send(payload);
     }
 
     async send(...args) {
