@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/osc",
-    "version": "0.0.44",
+    "version": "0.0.45",
     "description": "",
     "keywords": [
         "javascript"
@@ -42,7 +42,7 @@
         "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@cuecue/core": "^0.0.44",
+        "@cuecue/core": "^0.0.45",
         "debug": "^4.3.1",
         "lodash": "^4.17.21",
         "node-osc": "^9.1.3"

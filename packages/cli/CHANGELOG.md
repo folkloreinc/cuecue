@@ -1,5 +1,14 @@
 # @cuecue/cli
 
+## 0.0.45
+
+### Patch Changes
+
+- 85ca51c: `cuecue osc-output` works again: it imported an `OscOutput` that `@cuecue/osc` doesn't export, and never opened its OSC client. It now sends the message, prints it, and exits with an error code when sending fails.
+- Updated dependencies [cf46f64]
+    - @cuecue/osc@0.0.45
+    - @cuecue/pubnub@0.0.45
+
 ## 0.0.44
 
 ### Patch Changes
