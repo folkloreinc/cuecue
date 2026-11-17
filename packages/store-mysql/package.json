@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/store-mysql",
-    "version": "0.0.44",
+    "version": "0.0.45",
     "description": "",
     "keywords": [
         "javascript"
@@ -45,7 +45,7 @@
         "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@cuecue/core": "^0.0.44",
+        "@cuecue/core": "^0.0.45",
         "db-migrate": "^1.9.0",
         "db-migrate-mysql": "^3.2.1",
         "debug": "^4.3.1",
@@ -59,6 +59,6 @@
         "access": "public"
     },
     "devDependencies": {
-        "@cuecue/app": "^0.0.44"
+        "@cuecue/app": "^0.0.45"
     }
 }

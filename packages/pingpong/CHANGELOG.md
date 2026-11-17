@@ -1,5 +1,11 @@
 # @cuecue/pingpong
 
+## 0.0.45
+
+### Patch Changes
+
+- @cuecue/core@0.0.45
+
 ## 0.0.44
 
 ### Patch Changes
