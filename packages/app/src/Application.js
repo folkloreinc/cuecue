@@ -280,6 +280,23 @@ class Application extends EventEmitter {
         );
     }
 
+    /**
+     * @deprecated The misspelled name of `resetInteractionsByIds()`, until 0.0.45. Apps still call
+     * it.
+     */
+    async resetInteractidonsByIds(ids) {
+        if (!this.warnedResetInteractidonsByIds) {
+            this.warnedResetInteractidonsByIds = true;
+            const { logger } = this.options;
+            if (typeof logger.warn === 'function') {
+                logger.warn(
+                    '[cuecue] resetInteractidonsByIds() is deprecated: use resetInteractionsByIds().',
+                );
+            }
+        }
+        return this.resetInteractionsByIds(ids);
+    }
+
     getInteractions() {
         const { id: sessionId = null } = this.session || {};
         return this.store.getItems('interactions', {
