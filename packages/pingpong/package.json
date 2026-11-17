@@ -1,0 +1,58 @@
+{
+    "name": "@cuecue/pingpong",
+    "version": "0.0.43",
+    "description": "Cuecue output that publishes commands to a Pingpong channel",
+    "keywords": [
+        "cuecue",
+        "pingpong",
+        "realtime"
+    ],
+    "homepage": "https://github.com/folkloreinc/cuecue",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/folkloreinc/cuecue.git"
+    },
+    "author": {
+        "name": "Folklore",
+        "email": "info@folklore.email"
+    },
+    "contributors": [
+        {
+            "name": "David Mongeau-Petitpas",
+            "email": "dmp@folklore.email"
+        },
+        {
+            "name": "Nicolas Roy-Bourdages",
+            "email": "nrb@folklore.email"
+        },
+        {
+            "name": "Julien Carignan",
+            "email": "jc@folklore.email"
+        }
+    ],
+    "license": "ISC",
+    "engines": {
+        "node": ">=22"
+    },
+    "main": "dist/index.js",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "clean": "rm -rf dist",
+        "build": "rollup --config ../../rollup.config.mjs",
+        "prepack": "npm run clean && npm run build"
+    },
+    "dependencies": {
+        "@cuecue/core": "^0.0.43",
+        "debug": "^4.3.1",
+        "lodash": "^4.17.21"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "devDependencies": {
+        "@cuecue/app": "^0.0.43",
+        "@pingpong-io/server": "^0.3.1"
+    }
+}

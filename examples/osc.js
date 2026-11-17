@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import dotenv from 'dotenv';
 
 import Application from '../packages/app/src/Application';

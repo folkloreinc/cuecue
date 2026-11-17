@@ -1,3 +1,3 @@
-const test = () => console.log('test'); // eslint-disable-line
+const test = () => console.log('test');
 
 export default test;

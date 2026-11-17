@@ -26,6 +26,29 @@ const createApi = (app, input, externalRouter = null) => {
         res.json({ message: 'Welcome to CueCue' });
     });
 
+    // Any command the app accepts (start, end, reset, cue, define, interact…), as
+    // { "command": "cue", "args": ["intro"] }. The app ignores the commands it doesn't accept.
+    router.post('/commands', async (req, res) => {
+        const { command = null, args = [] } = req.body || {};
+        if (typeof command !== 'string' || command === '' || !isArray(args)) {
+            res.status(422).json({
+                success: false,
+                error: 'invalid_command',
+            });
+            return;
+        }
+        try {
+            await input.command(command, ...args);
+            res.json({
+                success: true,
+            });
+        } catch {
+            res.json({
+                success: false,
+            });
+        }
+    });
+
     router.get('/cues', async (req, res) => {
         const cues = await app.getCues();
         res.json(cues);
@@ -47,7 +70,7 @@ const createApi = (app, input, externalRouter = null) => {
             res.json({
                 success: true,
             });
-        } catch (e) {
+        } catch {
             res.json({
                 success: false,
             });
@@ -77,7 +100,7 @@ const createApi = (app, input, externalRouter = null) => {
             res.json({
                 success: true,
             });
-        } catch (e) {
+        } catch {
             res.json({
                 success: false,
             });
@@ -101,7 +124,7 @@ const createApi = (app, input, externalRouter = null) => {
             res.json({
                 success: true,
             });
-        } catch (e) {
+        } catch {
             res.json({
                 success: false,
             });
@@ -122,7 +145,7 @@ const createApi = (app, input, externalRouter = null) => {
             res.json({
                 success: true,
             });
-        } catch (e) {
+        } catch {
             res.json({
                 success: false,
             });

@@ -29,23 +29,24 @@
         }
     ],
     "license": "ISC",
+    "engines": {
+        "node": ">=22"
+    },
     "main": "dist/index.js",
     "files": [
         "dist"
     ],
     "scripts": {
         "clean": "rm -rf dist",
-        "build": "rollup --config ../../rollup.config.js",
-        "prepare": "npm run clean && npm run build"
+        "build": "rollup --config ../../rollup.config.mjs",
+        "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@babel/runtime": "^7.12.5",
         "@cuecue/core": "^0.0.43",
         "debug": "^4.3.1",
         "lodash": "^4.17.21",
         "socket.io": "^4.1.2",
-        "socket.io-client": "^4.1.2",
-        "uuid": "^8.3.2"
+        "socket.io-client": "^4.1.2"
     },
     "publishConfig": {
         "access": "public"

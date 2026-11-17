@@ -1,5 +1,5 @@
 import EventEmitter from 'wolfy87-eventemitter';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import createDebug from 'debug';
 import matches from 'lodash/matches';
 import isObject from 'lodash/isObject';
@@ -29,7 +29,7 @@ class MemoryStore extends EventEmitter {
     }
 
     addItem(type, data) {
-        const id = data.id || uuidv4();
+        const id = data.id || randomUUID();
         const savedItem = {
             ...data,
             id,

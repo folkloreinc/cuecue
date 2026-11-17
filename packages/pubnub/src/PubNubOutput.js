@@ -35,9 +35,14 @@ class PubNubOutput extends Base {
     }
 
     async command(command, ...args) {
-        const { channel, transformCommand = null, transformMessage = null, acceptCommand = null } = this.options;
-        const value = transformCommand !== null
-            ? await transformCommand(command, args) : { command, args };
+        const {
+            channel,
+            transformCommand = null,
+            transformMessage = null,
+            acceptCommand = null,
+        } = this.options;
+        const value =
+            transformCommand !== null ? await transformCommand(command, args) : { command, args };
 
         if (value === false) {
             this.debug('command canceled: %s %o', command, args);
@@ -75,7 +80,7 @@ class PubNubOutput extends Base {
                     this.debug('publish success: %s', command);
                     resolve();
                 });
-            } catch (e) {
+            } catch {
                 reject();
             }
         });

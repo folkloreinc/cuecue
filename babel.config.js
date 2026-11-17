@@ -1,19 +1,13 @@
-const path = require('path');
-const lernaJSON = require('./lerna.json');
-
 module.exports = {
-    babelrcRoots: ['.', ...lernaJSON.packages.map((packagePath) => path.join('./', packagePath))],
+    babelrcRoots: ['.', 'packages/*'],
     presets: [
         [
             require.resolve('@babel/preset-env'),
             {
                 targets: {
-                    node: 12,
+                    node: 22,
                 },
-                useBuiltIns: false,
             },
         ],
     ],
-
-    plugins: [[require.resolve('@babel/plugin-transform-runtime'), {}]],
 };

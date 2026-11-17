@@ -29,19 +29,21 @@
         }
     ],
     "license": "ISC",
+    "engines": {
+        "node": ">=22"
+    },
     "main": "dist/index.js",
     "files": [
         "dist"
     ],
     "scripts": {
         "clean": "rm -rf dist",
-        "build": "rollup --config ../../rollup.config.js",
-        "prepare": "npm run clean && npm run build"
+        "build": "rollup --config ../../rollup.config.mjs",
+        "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@babel/runtime": "^7.12.5",
         "@cuecue/core": "^0.0.43",
-        "axios": "^0.24.0",
+        "axios": "^1.21.1",
         "body-parser": "^1.19.0",
         "commander": "^9.4.0",
         "cors": "^2.8.5",
@@ -55,5 +57,8 @@
     },
     "publishConfig": {
         "access": "public"
+    },
+    "devDependencies": {
+        "@cuecue/app": "^0.0.43"
     }
 }

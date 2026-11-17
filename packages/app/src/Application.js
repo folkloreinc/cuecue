@@ -2,7 +2,7 @@ import StateMachine from 'javascript-state-machine';
 import EventEmitter from 'wolfy87-eventemitter';
 import createDebug from 'debug';
 import dayjs from 'dayjs';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import MemoryStore from './MemoryStore';
 
 class Application extends EventEmitter {
@@ -121,7 +121,7 @@ class Application extends EventEmitter {
             return null;
         }
         this.sendInteractToOutputs(data, interactionId);
-        const interaction = await this.ensureInteraction(data, interactionId || uuidv4());
+        const interaction = await this.ensureInteraction(data, interactionId || randomUUID());
         this.sendInteractionToOutputs(interaction);
         return interaction;
     }
@@ -162,7 +162,6 @@ class Application extends EventEmitter {
         await this.start();
     }
 
-    // eslint-disable-next-line class-methods-use-this
     kill() {
         // Test this with something else than nodemon
         process.kill(process.pid, 'SIGUSR2');
