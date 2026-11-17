@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/pubnub",
-    "version": "0.0.43",
+    "version": "0.0.44",
     "description": "",
     "keywords": [
         "javascript"
@@ -42,7 +42,7 @@
         "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@cuecue/core": "^0.0.43",
+        "@cuecue/core": "^0.0.44",
         "debug": "^4.3.1",
         "lodash": "^4.17.21",
         "pubnub": "^4.29.11"

@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/cli",
-    "version": "0.0.43",
+    "version": "0.0.44",
     "description": "",
     "keywords": [
         "javascript"
@@ -46,8 +46,8 @@
         "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@cuecue/osc": "^0.0.43",
-        "@cuecue/pubnub": "^0.0.43",
+        "@cuecue/osc": "^0.0.44",
+        "@cuecue/pubnub": "^0.0.44",
         "commander": "^9.4.0",
         "dotenv": "^16.0.1"
     },
