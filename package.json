@@ -36,6 +36,7 @@
         "packages/app",
         "packages/http",
         "packages/osc",
+        "packages/pingpong",
         "packages/pubnub",
         "packages/socketio",
         "packages/store-mysql",
