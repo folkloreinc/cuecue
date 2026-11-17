@@ -487,6 +487,36 @@ describe('Application interactions', () => {
         expect((await app.getInteractions()).map(({ id }) => id)).toEqual(['interaction-2']);
         expect(recorder.calls).toContainEqual(['uninteractions', ['interaction-1']]);
     });
+
+    it('keeps resetInteractidonsByIds() as a deprecated name of resetInteractionsByIds()', async () => {
+        const app = createApp({}, { logger: { error: vi.fn(), warn: vi.fn() } });
+        await app.start();
+        await app.interact({ vote: 'a' }, 'interaction-1');
+        await app.interact({ vote: 'b' }, 'interaction-2');
+        await app.interact({ vote: 'c' }, 'interaction-3');
+        const resetInteractionsByIds = vi.spyOn(app, 'resetInteractionsByIds');
+
+        await app.resetInteractidonsByIds(['interaction-1']);
+        await app.resetInteractidonsByIds(['interaction-2']);
+
+        expect(resetInteractionsByIds).toHaveBeenCalledWith(['interaction-1']);
+        expect(resetInteractionsByIds).toHaveBeenCalledWith(['interaction-2']);
+        expect((await app.getInteractions()).map(({ id }) => id)).toEqual(['interaction-3']);
+        expect(app.options.logger.warn).toHaveBeenCalledTimes(1);
+        expect(app.options.logger.warn).toHaveBeenCalledWith(
+            '[cuecue] resetInteractidonsByIds() is deprecated: use resetInteractionsByIds().',
+        );
+    });
+
+    it('calls resetInteractidonsByIds() without a logger.warn()', async () => {
+        const app = createApp();
+        await app.start();
+        await app.interact({ vote: 'a' }, 'interaction-1');
+
+        await app.resetInteractidonsByIds(['interaction-1']);
+
+        expect(await app.getInteractions()).toEqual([]);
+    });
 });
 
 describe('Application inputs', () => {
