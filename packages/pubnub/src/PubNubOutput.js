@@ -11,27 +11,27 @@ class PubNubOutput extends Base {
     }
 
     cue(cue, extraData = null) {
-        this.command('cue', cue, extraData);
+        return this.command('cue', cue, extraData);
     }
 
     cues(cues) {
-        this.command('cues', cues);
+        return this.command('cues', cues);
     }
 
     interact(data, interactionId = null) {
-        this.command('interact', data, interactionId);
+        return this.command('interact', data, interactionId);
     }
 
     interaction(interaction) {
-        this.command('interaction', interaction);
+        return this.command('interaction', interaction);
     }
 
     uninteraction(interactionId) {
-        this.command('uninteract', interactionId);
+        return this.command('uninteract', interactionId);
     }
 
     uninteractions(interactionIds) {
-        this.command('uninteractions', interactionIds);
+        return this.command('uninteractions', interactionIds);
     }
 
     async command(command, ...args) {
@@ -75,13 +75,14 @@ class PubNubOutput extends Base {
                 this.client.publish(payload, (status, response) => {
                     if (status.error) {
                         this.debug('publish error: %s %O %O', command, status, response);
-                        reject(status.error);
+                        reject(new Error(`PubNub publish failed: ${status.category}`));
+                        return;
                     }
                     this.debug('publish success: %s', command);
                     resolve();
                 });
-            } catch {
-                reject();
+            } catch (error) {
+                reject(error);
             }
         });
     }

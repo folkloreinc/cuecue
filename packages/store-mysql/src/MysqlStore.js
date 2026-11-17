@@ -18,6 +18,9 @@ class MysqlStore extends EventEmitter {
             database: process.env.MYSQL_DB,
             port: process.env.MYSQL_PORT,
             autoConnect: false,
+            // One connection keeps the queries in order, as before. The pool replaces it when it is
+            // lost.
+            connectionLimit: 1,
             ...opts,
         };
 
@@ -56,8 +59,12 @@ class MysqlStore extends EventEmitter {
         });
     }
 
-    init() {
-        return this.state.init();
+    async init() {
+        await this.state.init();
+        const { autoConnect } = this.options;
+        if (autoConnect) {
+            await this.connect();
+        }
     }
 
     destroy() {
@@ -200,23 +207,36 @@ class MysqlStore extends EventEmitter {
     }
 
     async onInit() {
-        const { host, user, password, database, port, autoConnect } = this.options;
+        this.client = this.createPool();
+        this.emit('init');
+    }
 
-        this.client = mysql.createConnection({
+    createPool() {
+        const { host, user, password, database, port, connectionLimit } = this.options;
+        return mysql.createPool({
             host,
             user,
             password,
             database,
             port,
+            connectionLimit,
         });
+    }
 
-        if (autoConnect) {
-            this.connect();
+    endPool() {
+        const pool = this.client;
+        this.client = null;
+        if (pool === null) {
+            return Promise.resolve();
         }
-
-        this.emit('init');
-
-        return Promise.resolve();
+        return new Promise((resolve) => {
+            pool.end((error) => {
+                if (error) {
+                    debug('end error %O', error);
+                }
+                resolve();
+            });
+        });
     }
 
     onInitialized() {
@@ -227,22 +247,7 @@ class MysqlStore extends EventEmitter {
     async onDestroy() {
         debug('destroying...');
         this.emit('destroy');
-
-        await this.disconnect();
-
-        if (this.client !== null) {
-            return new Promise((resolve, reject) => {
-                this.client.destroy((err) => {
-                    if (err) {
-                        reject(err);
-                        return;
-                    }
-                    this.client = null;
-                    resolve();
-                });
-            });
-        }
-        return Promise.resolve();
+        await this.endPool();
     }
 
     onDestroyed() {
@@ -254,12 +259,18 @@ class MysqlStore extends EventEmitter {
         debug('connecting...');
         this.emit('connect');
 
+        if (this.client === null) {
+            this.client = this.createPool();
+        }
+
+        // Checks that the database answers.
         return new Promise((resolve, reject) => {
-            this.client.connect((err) => {
+            this.client.getConnection((err, connection) => {
                 if (err) {
                     reject(err);
                     return;
                 }
+                connection.release();
                 resolve();
             });
         });
@@ -272,16 +283,7 @@ class MysqlStore extends EventEmitter {
 
     onDisconnect() {
         this.emit('disconnect');
-
-        return new Promise((resolve, reject) => {
-            this.client.end((err) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                resolve();
-            });
-        });
+        return this.endPool();
     }
 
     onDisconnected() {
@@ -291,8 +293,7 @@ class MysqlStore extends EventEmitter {
     }
 
     onInvalidTransition(transition, from, to) {
-        this.debug('ERROR: Current state', this.state.state);
-        this.debug('ERROR: Invalid base transition: %s from: %s to: %s', transition, from, to);
+        debug('ERROR: Invalid transition: %s from: %s to: %s', transition, from, to);
     }
 }
 

@@ -21,8 +21,12 @@ class Base extends BasePlugin {
 
     async onDestroy() {
         await super.onDestroy();
+        if (this.osc === null) {
+            return Promise.resolve();
+        }
         return new Promise((resolve) => {
             this.osc.close(() => {
+                this.osc = null;
                 resolve();
             });
         });

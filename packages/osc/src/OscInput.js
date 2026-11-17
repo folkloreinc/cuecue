@@ -27,7 +27,9 @@ class OscInput extends Base {
     }
 
     async onDestroy() {
-        this.osc.off('message', this.onMessage);
+        if (this.osc !== null) {
+            this.osc.off('message', this.onMessage);
+        }
         await super.onDestroy();
     }
 
