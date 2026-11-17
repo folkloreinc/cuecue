@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/pingpong",
-    "version": "0.0.45",
+    "version": "0.0.46",
     "description": "Cuecue output that publishes commands to a Pingpong channel",
     "keywords": [
         "cuecue",
@@ -44,7 +44,7 @@
         "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@cuecue/core": "^0.0.45",
+        "@cuecue/core": "^0.0.46",
         "debug": "^4.3.1",
         "lodash": "^4.17.21"
     },
@@ -52,7 +52,7 @@
         "access": "public"
     },
     "devDependencies": {
-        "@cuecue/app": "^0.0.45",
+        "@cuecue/app": "^0.0.46",
         "@pingpong-io/server": "^0.3.1"
     }
 }

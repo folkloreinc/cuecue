@@ -1,6 +1,6 @@
 {
     "name": "@cuecue/app",
-    "version": "0.0.45",
+    "version": "0.0.46",
     "description": "",
     "keywords": [
         "javascript"
@@ -42,7 +42,7 @@
         "prepack": "npm run clean && npm run build"
     },
     "dependencies": {
-        "@cuecue/core": "^0.0.45",
+        "@cuecue/core": "^0.0.46",
         "commander": "^9.4.0",
         "dayjs": "^1.10.4",
         "debug": "^4.3.1",

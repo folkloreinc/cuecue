@@ -1,5 +1,12 @@
 # @cuecue/cli
 
+## 0.0.46
+
+### Patch Changes
+
+- @cuecue/osc@0.0.46
+    - @cuecue/pubnub@0.0.46
+
 ## 0.0.45
 
 ### Patch Changes

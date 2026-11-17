@@ -1,5 +1,11 @@
 # @cuecue/socketio
 
+## 0.0.46
+
+### Patch Changes
+
+- @cuecue/core@0.0.46
+
 ## 0.0.45
 
 ### Patch Changes

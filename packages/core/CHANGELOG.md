@@ -1,5 +1,9 @@
 # @cuecue/core
 
+## 0.0.46
+
+No changes in this release.
+
 ## 0.0.45
 
 No changes in this release.
