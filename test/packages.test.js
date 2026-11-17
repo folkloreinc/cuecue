@@ -76,8 +76,8 @@ describe('packages', () => {
         const { version } = JSON.parse(
             readFileSync(path.join(root, 'packages/cli/package.json'), 'utf8'),
         );
-        expect(execFileSync(process.execPath, [cli, '--version'], { encoding: 'utf8' }).trim()).toBe(
-            version,
-        );
+        expect(
+            execFileSync(process.execPath, [cli, '--version'], { encoding: 'utf8' }).trim(),
+        ).toBe(version);
     });
 });
