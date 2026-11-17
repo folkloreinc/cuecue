@@ -29,6 +29,12 @@ const expectedExports = {
     '@cuecue/store-mysql': [],
 };
 
+// What each package publishes: its build, and the MySQL store's migrations, which apps run from
+// node_modules.
+const expectedFiles = {
+    '@cuecue/store-mysql': ['dist', 'migrations'],
+};
+
 const packages = readdirSync(path.join(root, 'packages')).map((directory) => {
     const packagePath = path.join(root, 'packages', directory);
     const manifest = JSON.parse(readFileSync(path.join(packagePath, 'package.json'), 'utf8'));
@@ -58,7 +64,7 @@ describe('packages', () => {
         });
 
         it('publishes only what it builds', () => {
-            expect(manifest.files).toEqual(['dist']);
+            expect(manifest.files).toEqual(expectedFiles[manifest.name] ?? ['dist']);
             expect(manifest.publishConfig).toEqual({ access: 'public' });
         });
 
@@ -69,6 +75,26 @@ describe('packages', () => {
 
     it('@cuecue/store-mysql exports its store', () => {
         expect(require(path.join(root, 'packages/store-mysql'))).toBeTypeOf('function');
+    });
+
+    it('@cuecue/store-mysql publishes its migrations', () => {
+        const packed = JSON.parse(
+            execFileSync(
+                'npm',
+                ['pack', '--dry-run', '--json', '--ignore-scripts', '-w', '@cuecue/store-mysql'],
+                { cwd: root, encoding: 'utf8' },
+            ),
+        );
+        // npm 10 and 11 give an array, npm 12 an object by package name.
+        const [{ files }] = Array.isArray(packed) ? packed : Object.values(packed);
+        const published = files.map(({ path: file }) => file);
+        const migrations = readdirSync(path.join(root, 'packages/store-mysql/migrations'));
+        expect(migrations).toContain('config.json');
+        expect(migrations).toContain('20261117120000-extra.js');
+        migrations.forEach((file) => {
+            expect(published).toContain(`migrations/${file}`);
+        });
+        expect(published).toContain('README.md');
     });
 
     it('the cuecue command prints its version', () => {

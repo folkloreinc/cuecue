@@ -34,7 +34,8 @@
     },
     "main": "dist/index.js",
     "files": [
-        "dist"
+        "dist",
+        "migrations"
     ],
     "scripts": {
         "migrate:up": "db-migrate up --migrations-dir=./migrations --config=./migrations/config.json -e prod --dotenvCustomPath '../../.env'",
