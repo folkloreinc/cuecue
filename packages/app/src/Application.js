@@ -42,6 +42,8 @@ class Application extends EventEmitter {
         this.interactions = [];
         this.inputs = [];
         this.outputs = [];
+        // The transitions of the state machine run one after the other: see runTransition().
+        this.transitions = Promise.resolve();
 
         this.onInit = this.onInit.bind(this);
         this.onInitialized = this.onInitialized.bind(this);
@@ -91,38 +93,42 @@ class Application extends EventEmitter {
     }
 
     init() {
-        return this.state.init();
+        return this.runTransition(() => this.state.init());
     }
 
     destroy() {
-        return this.state.destroy();
+        return this.runTransition(() => this.state.destroy());
     }
 
-    async start() {
-        if (this.stateless()) {
-            this.debug('First init');
-            await this.init();
-        }
-        return this.state.start();
+    start() {
+        return this.runTransition(async () => {
+            if (this.stateless()) {
+                this.debug('First init');
+                await this.state.init();
+            }
+            return this.state.start();
+        });
     }
 
     stop() {
-        return this.state.stop();
+        return this.runTransition(() => this.state.stop());
     }
 
     end() {
-        return this.state.end();
+        return this.runTransition(() => this.state.end());
     }
 
-    async cue(id, sessionData = null) {
-        // The state machine doesn't cancel a transition when an async hook returns false: check
-        // the cue first, so that a missing cue doesn't put the app in the cued state.
-        const cues = (await this.getCues()) || [];
-        if (!cues.some((cue) => cue.id === id)) {
-            this.debug('Cannot find cue %s', id);
-            return false;
-        }
-        return this.state.cue(id, sessionData);
+    cue(id, sessionData = null) {
+        return this.runTransition(async () => {
+            // The state machine doesn't cancel a transition when an async hook returns false:
+            // check the cue first, so that a missing cue doesn't put the app in the cued state.
+            const cues = (await this.getCues()) || [];
+            if (!cues.some((cue) => cue.id === id)) {
+                this.debug('Cannot find cue %s', id);
+                return false;
+            }
+            return this.state.cue(id, sessionData);
+        });
     }
 
     async interact(data, interactionId = null) {
@@ -136,7 +142,21 @@ class Application extends EventEmitter {
     }
 
     uncue() {
-        return this.state.uncue();
+        return this.runTransition(() => this.state.uncue());
+    }
+
+    /**
+     * Runs a transition of the state machine once the previous ones have ended. The state machine
+     * ignores a transition asked for while another one runs: a command sent meanwhile (a second
+     * cue, an uncue…) would be lost, and its promise would never settle.
+     *
+     * A transition must never wait for another one: that one would wait for it in turn.
+     */
+    runTransition(transition) {
+        const result = this.transitions.then(transition);
+        // A failed transition doesn't stop the next ones; its caller gets the failure.
+        this.transitions = result.catch(() => {});
+        return result;
     }
 
     async define(...newCues) {
@@ -325,12 +345,14 @@ class Application extends EventEmitter {
         });
     }
 
-    async onAfterTransition(lastTransition) {
+    onAfterTransition(lastTransition) {
         const { id: sessionId = null } = this.session || {};
         const { transition, from, to } = lastTransition || {};
         this.debug('After transition: %O from: %s to: %s', transition, from, to);
         if (transition !== 'init') {
-            await this.sendCommandToOutputs('state', { sessionId, currentState: to });
+            // Like every message a transition sends, without waiting for the outputs: a slow
+            // output would hold the next commands. Each output still gets them in order.
+            this.sendCommandToOutputs('state', { sessionId, currentState: to });
         }
     }
 
@@ -433,7 +455,7 @@ class Application extends EventEmitter {
 
         await this.setSessionCue(null);
 
-        await this.sendCommandToOutputs('uncue', {
+        this.sendCommandToOutputs('uncue', {
             sessionId: this.session.id,
         });
 
@@ -459,7 +481,7 @@ class Application extends EventEmitter {
             await this.setSessionCue(cue, sessionData);
         }
 
-        await this.sendCueToOutputs(cue, sessionData);
+        this.sendCueToOutputs(cue, sessionData);
 
         this.emit('cue', cue, sessionData);
 
