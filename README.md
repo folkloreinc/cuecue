@@ -30,7 +30,7 @@ npm run lint           # ESLint
 npm run format         # Prettier
 ```
 
-Tests sit next to the code (`*.test.js`) and import the packages' sources. `test/packages.test.js` checks the builds, so run `npm run build` first. The tests of `@cuecue/pingpong` start a real Pingpong server, which needs Node 24: they are skipped on Node 22. CI runs the format check and the lint, then builds and tests on Node 22 and 24.
+Tests sit next to the code (`*.test.js`) and import the packages' sources. `test/packages.test.js` checks the builds, so run `npm run build` first. The tests of `@cuecue/pingpong` start a real Pingpong server, which needs Node 24: they are skipped on Node 22. The tests of `@cuecue/store-mysql` against MySQL run when `MYSQL_TEST_HOST`, `MYSQL_TEST_PORT`, `MYSQL_TEST_USER`, `MYSQL_TEST_PASSWORD` and `MYSQL_TEST_DB` name a migrated database (`npm run migrate:up -w @cuecue/store-mysql`), which they empty. CI runs the format check and the lint, builds and tests on Node 22 and 24, and tests the MySQL store on MySQL 8.4.
 
 The examples run with Babel: `npm run example:server`.
 
